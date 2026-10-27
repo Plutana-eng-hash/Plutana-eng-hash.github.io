@@ -69,7 +69,8 @@
   .spotify-btn{background:var(--brand);color:#000;padding:16px 40px;border-radius:999px;font-size:16px;font-weight:700;display:inline-flex;align-items:center;gap:12px;transition:background .15s,transform .1s;min-height:52px}
   .spotify-btn:hover{background:var(--brand-hover);transform:scale(1.02)}
   .spotify-btn:active{transform:scale(.98)}
-  .premium-note{color:var(--text-subdued);font-size:13px;margin-top:8px;text-align:center}
+  .premium-note{color:var(--text-subdued);font-size:13px;margin-top:8px;text-align:center;max-width:320px;line-height:1.6}
+  .premium-note strong{color:var(--text-base);font-weight:700}
 
   #app{
     display:grid;
@@ -116,6 +117,14 @@
   .playlist-item-info{flex:1;min-width:0}
   .playlist-name{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .playlist-meta{font-size:12px;color:var(--text-subdued);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .sidebar-footer{flex-shrink:0;padding:10px 4px 4px;border-top:1px solid rgba(255,255,255,.06);margin-top:8px}
+  .sidebar-user{display:flex;align-items:center;gap:10px;padding:8px 8px;border-radius:6px}
+  .sidebar-user-avatar{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.08);display:grid;place-items:center;color:var(--text-subdued);flex-shrink:0;overflow:hidden;font-weight:700;font-size:12px}
+  .sidebar-user-avatar img{width:100%;height:100%;object-fit:cover}
+  .sidebar-user-name{flex:1;min-width:0;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-subdued)}
+  .signout-btn{padding:6px 10px;border-radius:6px;background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--text-subdued);font-size:11.5px;font-weight:700;transition:all .15s;flex-shrink:0}
+  .signout-btn:hover{color:var(--danger);border-color:rgba(255,71,87,.4);background:rgba(255,71,87,.08)}
 
   .main{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
   .home{padding:24px}
@@ -246,9 +255,12 @@
   .fx-action.secondary{background:rgba(255,255,255,.1);color:var(--text-base)}
   .fx-action.secondary:hover{background:rgba(255,255,255,.18)}
 
-  .add-popover{position:fixed;width:320px;max-width:calc(100vw - 24px);max-height:min(440px,70vh);background:var(--bg-card);border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,.75);z-index:400;display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
-  .add-popover-header{padding:14px 16px 8px;font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .add-popover{position:fixed;width:340px;max-width:calc(100vw - 24px);max-height:min(480px,70vh);background:var(--bg-card);border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,.75);z-index:400;display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+  .add-popover-header{padding:14px 16px 4px;font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .add-popover-status{padding:0 16px 10px;font-size:11.5px;color:var(--text-subdued)}
+  .add-popover-warning{margin:0 12px 10px;padding:10px 12px;border-radius:8px;background:rgba(255,71,87,.08);border-left:3px solid var(--danger);font-size:12px;color:#ffb3b8;line-height:1.5;display:none}
+  .add-popover-warning.show{display:block}
+  .add-popover-warning button{margin-top:8px;padding:6px 12px;border-radius:6px;background:var(--danger);color:#fff;font-size:12px;font-weight:700;display:inline-block}
   .add-filter{margin:0 12px 8px;padding:10px 12px;border-radius:8px;border:none;background:rgba(255,255,255,.07);color:var(--text-base);font-size:16px;outline:none}
   .add-filter::placeholder{color:var(--text-subdued)}
   .add-popover-list{flex:1;overflow-y:auto;padding:0 6px 6px;min-height:0;overscroll-behavior:contain}
@@ -267,7 +279,7 @@
   .add-popover-new{display:flex;align-items:center;gap:10px;padding:13px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:13.5px;font-weight:700;color:var(--brand);text-align:left;transition:background .12s}
   .add-popover-new:hover{background:rgba(29,185,84,.1)}
   .add-popover-new svg{width:16px;height:16px}
-  .add-popover-empty{padding:18px 16px;text-align:center;font-size:12.5px;color:var(--text-subdued)}
+  .add-popover-empty{padding:18px 16px;text-align:center;font-size:12.5px;color:var(--text-subdued);line-height:1.6}
   .mini-spinner{width:13px;height:13px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--brand);border-radius:50%;display:inline-block;animation:spin .7s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -350,14 +362,16 @@
   body[data-device="tablet"]{--player-h:108px;--sidebar-w:76px}
   body[data-device="tablet"] .sidebar-logo span,
   body[data-device="tablet"] .nav-item span,
-  body[data-device="tablet"] .nav-item > text,
   body[data-device="tablet"] .library-title,
   body[data-device="tablet"] .playlist-name,
-  body[data-device="tablet"] .playlist-meta{display:none}
+  body[data-device="tablet"] .playlist-meta,
+  body[data-device="tablet"] .sidebar-user-name{display:none}
   body[data-device="tablet"] .sidebar-logo{justify-content:center;padding:8px 0 16px}
   body[data-device="tablet"] .nav-item{justify-content:center;padding:12px 0}
   body[data-device="tablet"] .playlist-item{justify-content:center;padding:8px 0;min-height:52px}
   body[data-device="tablet"] .playlist-item-info{display:none}
+  body[data-device="tablet"] .sidebar-user{justify-content:center}
+  body[data-device="tablet"] .signout-btn{display:none}
   body[data-device="tablet"] .home,
   body[data-device="tablet"] .search-view,
   body[data-device="tablet"] .playlist-view,
@@ -469,7 +483,7 @@
     </svg>
     Log in with Spotify
   </button>
-  <div class="premium-note">Spotify Premium required for in-browser playback</div>
+  <div class="premium-note">Spotify <strong>Premium</strong> required for in-browser playback. When the login screen appears, approve <strong>all requested permissions</strong> — including playlist modification.</div>
 </div>
 
 <div id="app" style="display:none">
@@ -492,6 +506,13 @@
     </div>
     <div class="library-title">Your Library</div>
     <div class="playlist-list" id="playlist-list"></div>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar" id="sidebar-avatar">?</div>
+        <div class="sidebar-user-name" id="sidebar-username">Signed in</div>
+        <button class="signout-btn" id="signout-btn" title="Sign out and clear permissions">Sign out</button>
+      </div>
+    </div>
   </aside>
 
   <main class="main" id="main"></main>
@@ -583,7 +604,17 @@
 <script>
 const CLIENT_ID='c82434c3ef7743a3bafe4372f6c9dfe3';
 const REDIRECT_URI=window.location.origin+window.location.pathname;
-const SCOPES=['streaming','user-read-email','user-read-private','playlist-read-private','playlist-read-collaborative','playlist-modify-public','playlist-modify-private','user-modify-playback-state','user-read-playback-state'].join(' ');
+const SCOPES=[
+  'streaming',
+  'user-read-email',
+  'user-read-private',
+  'playlist-read-private',
+  'playlist-read-collaborative',
+  'playlist-modify-public',
+  'playlist-modify-private',
+  'user-modify-playback-state',
+  'user-read-playback-state'
+].join(' ');
 const IS_FILE=window.location.protocol==='file:';
 const IMG_PROXY='https://images.weserv.nl/?url=';
 const CACHE_TTL=5*60*1000;
@@ -620,6 +651,7 @@ const toastEl=$('toast'),fxPanel=$('fx-panel'),fxToggle=$('fx-toggle'),fxStatus=
 const pitchSlider=$('pitch-slider'),pitchValueEl=$('pitch-value'),bassSlider=$('bass-slider'),bassValueEl=$('bass-value');
 const bgLayer=$('bg-layer'),bgDim=$('bg-dim'),queueDrawer=$('queue-drawer'),queueBody=$('queue-body');
 const sidebarEl=$('sidebar'),mobileMenuBtn=$('mobile-menu-btn'),sidebarBackdrop=$('sidebar-backdrop');
+const signoutBtn=$('signout-btn'),sidebarAvatar=$('sidebar-avatar'),sidebarUsername=$('sidebar-username');
 
 let accessToken=null,tokenExpiresAt=0;
 let player=null,deviceId=null,sdkReady=false;
@@ -627,6 +659,7 @@ let isPaused=true,currentPosition=0,currentDuration=0,seekDragging=false,pollTim
 let userPlaylists=[],activePlaylistId=null,activeTrackUri=null,currentArtUrl=null;
 let searchState={query:'',tracks:[],hasMore:false,offset:0,total:0},searchDebounce=null;
 let settingsTab='themes',adMuted=false,lastAutoSkipUri=null;
+let currentUserId=null,currentUserProfile=null;
 
 let THEMES=BUILTIN_THEMES.slice();
 let themesStatus={state:'idle',count:0,message:'Not loaded'};
@@ -762,6 +795,15 @@ function setImg(container,url,fallbackHtml,lazy){
 function trackImage(t){if(!t)return null;return pickImage(t.album&&t.album.images)||pickImage(t.images);}
 function trackArtistText(t){const n=(t.artists||[]).map(a=>a&&a.name).filter(Boolean);if(n.length)return n.join(', ');if(t.show&&t.show.name)return t.show.name;return 'Unknown Artist';}
 function playlistTrackCount(p){if(!p)return 0;if(p._actualCount!=null)return p._actualCount;if(p.tracks&&typeof p.tracks.total==='number')return p.tracks.total;if(p.items&&typeof p.items.total==='number')return p.items.total;return 0;}
+
+function canModifyPlaylist(p){
+  if(!p)return false;
+  if(p.collaborative)return true;
+  if(!currentUserId)return true;
+  if(p.owner&&p.owner.id===currentUserId)return true;
+  if(p.owner&&p.owner.id&&p.owner.id!==currentUserId)return false;
+  return true;
+}
 
 function cachedFetch(key,fetcher,ttl){
   const e=cache.get(key),t=ttl||CACHE_TTL;
@@ -1109,6 +1151,12 @@ function setBass(db){
   updateFxStatus();
 }
 
+async function fetchUserProfile(){
+  const res=await apiFetch('https://api.spotify.com/v1/me');
+  if(!res.ok)return null;
+  return await res.json();
+}
+
 async function fetchPlaylists(){
   const all=[];let url='https://api.spotify.com/v1/me/playlists?limit=50';
   while(url){
@@ -1167,22 +1215,48 @@ async function searchTracks(query,offset){
   return result;
 }
 
+function interpretMutationError(status,body){
+  const raw=(body&&body.error&&body.error.message)||('HTTP '+status);
+  const lower=raw.toLowerCase();
+  if(status===403){
+    if(lower.includes('scope'))return {message:'Missing permission to edit playlists. Sign out (bottom of the sidebar) and sign in again, then approve all permissions.',kind:'scope'};
+    if(lower.includes('premium'))return {message:'Spotify Premium is required to modify playlists.',kind:'premium'};
+    if(lower.includes('collaborat'))return {message:'You can only add to playlists you own or collaborate on.',kind:'owner'};
+    return {message:'Spotify refused this change (403). You may not own this playlist, or your session lacks edit permission. Try signing out and back in.',kind:'forbidden'};
+  }
+  if(status===404)return {message:'Playlist or track not found. It may have been deleted.',kind:'notfound'};
+  if(status===429)return {message:'Rate limited by Spotify. Wait a few seconds and try again.',kind:'ratelimit'};
+  return {message:raw,kind:'error'};
+}
+
 async function addTrackToPlaylist(playlistId,trackUri){
-  const opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uris:[trackUri]})};
-  let res=await apiFetch('https://api.spotify.com/v1/playlists/'+playlistId+'/tracks',opts);
-  if(res.status===404)res=await apiFetch('https://api.spotify.com/v1/playlists/'+playlistId+'/items',opts);
+  const body=JSON.stringify({uris:[trackUri]});
+  const opts={method:'POST',headers:{'Content-Type':'application/json'},body:body};
+
+  let res=await apiFetch('https://api.spotify.com/v1/playlists/'+playlistId+'/items',opts);
+  if(res.status===404){
+    res=await apiFetch('https://api.spotify.com/v1/playlists/'+playlistId+'/tracks',opts);
+  }
+
   if(res.ok){invalidatePlaylist(playlistId);return {ok:true};}
-  const err=await res.json().catch(()=>({}));
-  return {ok:false,message:(err.error&&err.error.message)||('HTTP '+res.status)};
+  const errBody=await res.json().catch(()=>({}));
+  const info=interpretMutationError(res.status,errBody);
+  return {ok:false,status:res.status,message:info.message,kind:info.kind};
 }
 
 async function removeTrackFromPlaylist(playlistId,trackUri){
-  const opts={method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({tracks:[{uri:trackUri}]})};
-  let res=await apiFetch('https://api.spotify.com/v1/playlists/'+playlistId+'/tracks',opts);
-  if(res.status===404)res=await apiFetch('https://api.spotify.com/v1/playlists/'+playlistId+'/items',opts);
+  const body=JSON.stringify({tracks:[{uri:trackUri}]});
+  const opts={method:'DELETE',headers:{'Content-Type':'application/json'},body:body};
+
+  let res=await apiFetch('https://api.spotify.com/v1/playlists/'+playlistId+'/items',opts);
+  if(res.status===404){
+    res=await apiFetch('https://api.spotify.com/v1/playlists/'+playlistId+'/tracks',opts);
+  }
+
   if(res.ok){invalidatePlaylist(playlistId);return {ok:true};}
-  const err=await res.json().catch(()=>({}));
-  return {ok:false,message:(err.error&&err.error.message)||('HTTP '+res.status)};
+  const errBody=await res.json().catch(()=>({}));
+  const info=interpretMutationError(res.status,errBody);
+  return {ok:false,status:res.status,message:info.message,kind:info.kind};
 }
 
 async function createPlaylist(name){
@@ -1206,6 +1280,27 @@ async function ensureMembership(ids,onUpdate){
 }
 
 function setActiveNav(name){document.querySelectorAll('.nav-item').forEach(n=>{n.classList.toggle('active',n.dataset.nav===name);});}
+
+function renderUserFooter(){
+  if(!currentUserProfile){
+    sidebarAvatar.textContent='?';
+    sidebarUsername.textContent='Signed in';
+    return;
+  }
+  const img=pickImage(currentUserProfile.images);
+  if(img){
+    sidebarAvatar.innerHTML='';
+    const el=document.createElement('img');
+    el.alt='';
+    el.setAttribute('referrerpolicy','no-referrer');
+    el.src=img;
+    el.addEventListener('error',()=>{sidebarAvatar.textContent=(currentUserProfile.display_name||'?').charAt(0).toUpperCase();},{once:true});
+    sidebarAvatar.appendChild(el);
+  }else{
+    sidebarAvatar.textContent=(currentUserProfile.display_name||'?').charAt(0).toUpperCase();
+  }
+  sidebarUsername.textContent=currentUserProfile.display_name||currentUserProfile.id||'Signed in';
+}
 
 function renderSidebar(){
   playlistListEl.innerHTML='';
@@ -1339,25 +1434,35 @@ function openAddPopover(track,anchorEl){
   const isMobile=document.body.dataset.device==='mobile';
   if(!isMobile){
     const rect=anchorEl.getBoundingClientRect();
-    let top=rect.bottom+8,left=Math.min(rect.left-250,window.innerWidth-336);
+    let top=rect.bottom+8,left=Math.min(rect.left-260,window.innerWidth-356);
     left=Math.max(12,left);
-    if(top+460>window.innerHeight)top=Math.max(12,rect.top-460-8);
+    if(top+500>window.innerHeight)top=Math.max(12,rect.top-500-8);
     pop.style.top=top+'px';pop.style.left=left+'px';
   }
   const header=document.createElement('div');header.className='add-popover-header';header.textContent=track.name;
   pop.appendChild(header);
   const status=document.createElement('div');status.className='add-popover-status';status.textContent='Checking your playlists…';
   pop.appendChild(status);
+
+  const warning=document.createElement('div');warning.className='add-popover-warning';
+  pop.appendChild(warning);
+
   const filter=document.createElement('input');filter.className='add-filter';filter.type='text';filter.placeholder='Filter playlists';
   pop.appendChild(filter);
   const list=document.createElement('div');list.className='add-popover-list';pop.appendChild(list);
+
+  const editable=userPlaylists.filter(canModifyPlaylist);
   const rows=new Map();
-  const ids=userPlaylists.slice(0,80).map(p=>p.id);
-  if(!userPlaylists.length){
-    const empty=document.createElement('div');empty.className='add-popover-empty';empty.textContent='No playlists loaded.';
-    list.appendChild(empty);status.textContent='No playlists available';
+  const ids=editable.slice(0,80).map(p=>p.id);
+
+  if(!editable.length){
+    const empty=document.createElement('div');empty.className='add-popover-empty';
+    empty.textContent=userPlaylists.length?'None of your playlists are editable by this account. Only playlists you own or collaborate on can be modified.':'No playlists loaded.';
+    list.appendChild(empty);
+    status.textContent='No editable playlists';
   }
-  userPlaylists.forEach(p=>{
+
+  editable.forEach(p=>{
     const row=document.createElement('button');row.className='add-row';
     row.innerHTML='<div class="add-thumb"></div><div class="add-info"><div class="add-name"></div><div class="add-meta"></div></div><div class="add-state"></div>';
     setImg(row.querySelector('.add-thumb'),pickImage(p.images),ICON_NOTE_SMALL,true);
@@ -1372,6 +1477,7 @@ function openAddPopover(track,anchorEl){
       const set=plMembership.get(p.id);
       if(!set){showToast('Still checking this playlist',1800);return;}
       entry.busy=true;stateEl.innerHTML='<span class="mini-spinner"></span>';
+      warning.classList.remove('show');
       const has=set.has(track.uri);
       const res=has?await removeTrackFromPlaylist(p.id,track.uri):await addTrackToPlaylist(p.id,track.uri);
       entry.busy=false;
@@ -1385,10 +1491,24 @@ function openAddPopover(track,anchorEl){
           if(side)side.textContent='Playlist • '+set.size+' tracks';
         }
         showToast((has?'Removed from ':'Added to ')+p.name,1800,'success');
-      }else{paintRow(p.id);showToast(res.message,4500);}
+      }else{
+        paintRow(p.id);
+        warning.innerHTML='';
+        const msg=document.createElement('div');
+        msg.textContent=res.message;
+        warning.appendChild(msg);
+        if(res.kind==='scope'||res.kind==='forbidden'){
+          const btn=document.createElement('button');
+          btn.textContent='Sign out & reauthorize';
+          btn.addEventListener('click',()=>{pop.remove();signOut();});
+          warning.appendChild(btn);
+        }
+        warning.classList.add('show');
+      }
     });
     list.appendChild(row);
   });
+
   function paintRow(id){
     const entry=rows.get(id);if(!entry)return;
     const set=plMembership.get(id);
@@ -1402,8 +1522,8 @@ function openAddPopover(track,anchorEl){
     let known=0,inside=0;
     rows.forEach((e,id)=>{const s=plMembership.get(id);if(!s)return;known++;if(s.has(track.uri))inside++;});
     if(known<rows.size)status.textContent='Checking your playlists… '+known+'/'+rows.size;
-    else if(known===0)status.textContent='No playlists available';
-    else status.textContent='In '+inside+' of '+known+' playlists';
+    else if(known===0)status.textContent='No editable playlists';
+    else status.textContent='In '+inside+' of '+known+' editable playlists';
   }
   filter.addEventListener('input',()=>{
     const q=filter.value.trim().toLowerCase();
@@ -1878,12 +1998,30 @@ function openSettings(tab){
   closeSidebar();
 }
 
+function signOut(){
+  if(!confirm('Sign out? This clears your Spotify session so you can sign back in with the right permissions.'))return;
+  try{if(player)player.disconnect();}catch(e){}
+  if(pollTimer){clearInterval(pollTimer);pollTimer=null;}
+  player=null;deviceId=null;sdkReady=false;
+  accessToken=null;tokenExpiresAt=0;
+  currentUserId=null;currentUserProfile=null;
+  clearCaches();
+  plMembership.clear();
+  localStorage.removeItem('spotify_refresh_token');
+  sessionStorage.removeItem('pkce_verifier');
+  window.location.href='https://accounts.spotify.com/en/logout';
+}
+
 function showApp(){loginEl.style.display='none';appEl.style.display='grid';initPlayer();}
 
 async function bootApp(){
   try{
     mainEl.innerHTML='<div class="loading-msg">Loading…</div>';
-    userPlaylists=await fetchPlaylists();
+    const [profile,playlists]=await Promise.all([fetchUserProfile(),fetchPlaylists()]);
+    currentUserProfile=profile;
+    currentUserId=profile&&profile.id?profile.id:null;
+    userPlaylists=playlists;
+    renderUserFooter();
     renderSidebar();renderHome();
   }catch(e){
     mainEl.innerHTML='<div class="empty-msg">Could not load your library. Try reloading. ('+(e.message||'')+')</div>';
@@ -1895,6 +2033,7 @@ $('login-btn').addEventListener('click',startLogin);
 $('home-btn').addEventListener('click',()=>{renderHome();closeSidebar();});
 $('search-btn').addEventListener('click',()=>{renderSearchView();closeSidebar();});
 $('settings-btn').addEventListener('click',()=>openSettings());
+signoutBtn.addEventListener('click',signOut);
 
 mobileMenuBtn.addEventListener('click',toggleSidebar);
 sidebarBackdrop.addEventListener('click',closeSidebar);
@@ -2015,4 +2154,4 @@ applySettings();
 })();
 </script>
 </body>
- </html>
+</html>
