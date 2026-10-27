@@ -1,0 +1,16 @@
+{
+  "themes": [
+    { "id": "Blossom", "name": "Blossom" },
+    { "id": "BurntSienna", "name": "BurntSienna" },
+    { "id": "Dreary", "name": "Dreary" },
+    { "id": "Dribbblish", "name": "Dribbblish" },
+    { "id": "Flow", "name": "Flow" },
+    { "id": "Matte", "name": "Matte" },
+    { "id": "Nightlight", "name": "Nightlight" },
+    { "id": "Onepunch", "name": "Onepunch" },
+    { "id": "SharkBlue", "name": "SharkBlue" },
+    { "id": "Sleek", "name": "Sleek" },
+    { "id": "StarryNight", "name": "StarryNight" },
+    { "id": "Ziro", "name": "Ziro" }
+  ]
+}
