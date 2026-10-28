@@ -16,6 +16,13 @@
 </head>
 <body>
 
+<div id="file-warning" class="file-warning" style="display:none">
+  <div>
+    <strong>⚠️ This app must be served from HTTP/HTTPS.</strong>
+    <div>Spotify login and the Web Playback SDK do not work from <code>file://</code>. Upload <code>index.html</code>, <code>styles.css</code>, <code>index.js</code>, and the <code>Themes/</code> folder to a static host (GitHub Pages, Netlify, Vercel, Cloudflare Pages).</div>
+  </div>
+</div>
+
 <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Open menu">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
 </button>
@@ -37,7 +44,7 @@
     </svg>
     Log in with Spotify
   </button>
-  <div class="premium-note">Spotify <strong>Premium</strong> required for in-browser playback. When the login screen appears, approve <strong>all requested permissions</strong> — including playlist modification.</div>
+  <div class="premium-note">Spotify <strong>Premium</strong> required for in-browser playback. When the login screen appears, approve <strong>all requested permissions</strong>.</div>
 </div>
 
 <div id="app" style="display:none">
@@ -78,10 +85,7 @@
         <div class="fx-status" id="fx-status">Idle</div>
       </div>
       <div class="fx-control">
-        <div class="fx-row">
-          <span class="fx-label">Speed &amp; Pitch</span>
-          <span class="fx-value" id="pitch-value">1.00×</span>
-        </div>
+        <div class="fx-row"><span class="fx-label">Speed &amp; Pitch</span><span class="fx-value" id="pitch-value">1.00×</span></div>
         <div class="fx-slider-wrap">
           <button class="fx-step-btn" id="pitch-down">−</button>
           <input type="range" id="pitch-slider" min="50" max="150" value="100">
@@ -90,10 +94,7 @@
         <div class="fx-help">Changes tempo and pitch together.</div>
       </div>
       <div class="fx-control">
-        <div class="fx-row">
-          <span class="fx-label">Bass</span>
-          <span class="fx-value" id="bass-value">+0 dB</span>
-        </div>
+        <div class="fx-row"><span class="fx-label">Bass</span><span class="fx-value" id="bass-value">+0 dB</span></div>
         <div class="fx-slider-wrap">
           <button class="fx-step-btn" id="bass-down">−</button>
           <input type="range" id="bass-slider" min="-12" max="12" value="0">
@@ -154,6 +155,13 @@
 
 <div id="toast" class="toast"></div>
 
+<script>
+  window.__sdkReady = false;
+  window.onSpotifyWebPlaybackSDKReady = function() {
+    window.__sdkReady = true;
+    if (window.__bootstrap) window.__bootstrap();
+  };
+</script>
 <script src="https://sdk.scdn.co/spotify-player.js"></script>
 <script src="index.js"></script>
 </body>
