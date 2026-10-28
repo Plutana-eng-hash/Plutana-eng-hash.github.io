@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Cadence</title>
+<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/Plutana-eng-hash/Plutana-eng-hash.github.io/refs/heads/main/Spot/Themes/Cadence.png">
+<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/Plutana-eng-hash/Plutana-eng-hash.github.io/refs/heads/main/Spot/Themes/Cadence.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://i.scdn.co" crossorigin>
 <link rel="preconnect" href="https://api.spotify.com" crossorigin>
@@ -62,14 +64,25 @@
   .bg-layer.on{opacity:var(--bg-alpha)}
   .bg-dim{position:fixed;inset:0;z-index:-2;background:var(--bg-base);opacity:var(--bg-dim);pointer-events:none;transition:opacity .4s ease,background .4s ease}
 
-  .login{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:var(--sat) 20px var(--sab);background:radial-gradient(ellipse at top,rgba(29,185,84,0.18) 0%,var(--bg-base) 60%);z-index:10}
+  .login{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:var(--sat) 20px var(--sab);background:radial-gradient(ellipse at top,rgba(29,185,84,0.18) 0%,var(--bg-base) 60%);z-index:10;overflow-y:auto}
   .login-logo{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+  .login-logo img{width:48px;height:48px;border-radius:10px;object-fit:cover;flex-shrink:0}
   .login-logo span{font-size:clamp(28px,7vw,42px);font-weight:800;letter-spacing:-0.03em}
   .spotify-btn{background:var(--brand);color:#000;padding:16px 40px;border-radius:999px;font-size:16px;font-weight:700;display:inline-flex;align-items:center;gap:12px;transition:background .15s,transform .1s;min-height:52px}
   .spotify-btn:hover{background:var(--brand-hover);transform:scale(1.02)}
   .spotify-btn:active{transform:scale(.98)}
   .premium-note{color:var(--text-subdued);font-size:13px;margin-top:8px;text-align:center;max-width:320px;line-height:1.6}
   .premium-note strong{color:var(--text-base);font-weight:700}
+
+  .login-status{max-width:440px;width:100%;padding:12px 16px;border-radius:8px;font-size:13px;line-height:1.6;text-align:left;display:none;word-break:break-word}
+  .login-status.show{display:block}
+  .login-status.error{background:rgba(255,71,87,.1);border-left:3px solid var(--danger);color:#ffb3b8}
+  .login-status.info{background:rgba(29,185,84,.1);border-left:3px solid var(--brand);color:#b3f5c7}
+  .login-status code{background:rgba(255,255,255,.1);padding:2px 6px;border-radius:4px;font-family:'SF Mono',ui-monospace,monospace;font-size:12px;word-break:break-all}
+  .login-status strong{color:#fff;font-weight:700}
+
+  .login-redirect-hint{font-size:11px;color:var(--text-subdued);margin-top:4px;text-align:center;max-width:420px;word-break:break-all;line-height:1.5;padding:0 8px}
+  .login-redirect-hint code{background:rgba(255,255,255,.06);padding:1px 5px;border-radius:3px;font-family:'SF Mono',ui-monospace,monospace;font-size:10.5px;color:var(--text-base);word-break:break-all}
 
   #app{
     display:grid;
@@ -114,6 +127,7 @@
 
   .sidebar{display:flex;flex-direction:column;padding:14px 10px}
   .sidebar-logo{display:flex;align-items:center;gap:12px;padding:8px 10px 18px;flex-shrink:0}
+  .sidebar-logo img{width:26px;height:26px;border-radius:6px;object-fit:cover;flex-shrink:0}
   .sidebar-logo span{font-size:20px;font-weight:800;letter-spacing:-0.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:999px;color:var(--text-subdued);font-size:14px;font-weight:700;cursor:pointer;transition:color .15s,background .15s,transform .1s;flex-shrink:0;min-height:44px;margin-bottom:2px}
   .nav-item:hover{color:var(--text-base);background:rgba(255,255,255,.06)}
@@ -508,6 +522,7 @@
 
 <div id="login" class="login">
   <div class="login-logo">
+    <img src="https://raw.githubusercontent.com/Plutana-eng-hash/Plutana-eng-hash.github.io/refs/heads/main/Spot/Themes/Cadence.png" alt="" onerror="this.remove()">
     <span>Cadence</span>
   </div>
   <button id="login-btn" class="spotify-btn">
@@ -517,11 +532,14 @@
     Continue with Spotify
   </button>
   <div class="premium-note">Spotify <strong>Premium</strong> required for in-browser playback. When the login screen appears, approve <strong>all requested permissions</strong> — including playlist modification.</div>
+  <div id="login-status" class="login-status"></div>
+  <div class="login-redirect-hint">Redirect URI: <code id="login-redirect-uri"></code></div>
 </div>
 
 <div id="app" style="display:none">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
+      <img src="https://raw.githubusercontent.com/Plutana-eng-hash/Plutana-eng-hash.github.io/refs/heads/main/Spot/Themes/Cadence.png" alt="" onerror="this.remove()">
       <span>Cadence</span>
     </div>
     <div class="nav-item active" data-nav="home" id="home-btn" title="Home">
@@ -613,7 +631,7 @@ const IMG_PROXY='https://images.weserv.nl/?url=';
 const CACHE_TTL=5*60*1000;
 const SEARCH_TTL=2*60*1000;
 const SETTINGS_KEY='cadence_settings_v1';
-const THEMES_DIR='Themes';
+const THEMES_DIR='https://cdn.jsdelivr.net/gh/Plutana-eng-hash/Plutana-eng-hash.github.io@main/Spot/Themes';
 const THEME_VARS=['--bg-base','--bg-elevated','--bg-card','--bg-hover','--text-base','--text-subdued','--brand','--brand-hover'];
 const SPICE_KEYS=['main','sidebar','player','card','shadow','text','subtext','selected-row','button','button-active','button-disabled','tab-active','notification','notification-error','misc'];
 
@@ -647,6 +665,7 @@ let player=null,deviceId=null,sdkReady=false,deviceReady=false;
 let isPaused=true,currentPosition=0,currentDuration=0,positionTimestamp=0;
 let seekDragging=false,pollTimer=null,uiTimer=null;
 let userPlaylists=[],activePlaylistId=null,activeTrackUri=null,currentArtUrl=null;
+let activeContextUri=null;
 let searchState={query:'',tracks:[],hasMore:false,offset:0,total:0},searchDebounce=null;
 let settingsTab='themes',adMuted=false,lastAutoSkipUri=null;
 let currentUserId=null,currentUserProfile=null;
@@ -663,6 +682,18 @@ function loadSettings(){
   catch(e){return Object.assign({},DEFAULT_SETTINGS);}
 }
 function saveSettings(){try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}catch(e){}}
+
+function setLoginStatus(msg,type){
+  const el=$('login-status');
+  if(!el)return;
+  if(!msg){el.className='login-status';el.textContent='';return;}
+  el.className='login-status show '+(type||'info');
+  el.innerHTML=msg;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
 function shade(hex,percent){
   let h=(hex||'#1DB954').replace('#','');
@@ -881,7 +912,11 @@ function buildThemeFromIni(folderId,displayName,sections){
 }
 
 async function fetchText(path){
-  try{const res=await fetch(path,{cache:'no-store'});if(!res.ok)return null;return await res.text();}catch(e){return null;}
+  try{
+    const res=await fetch(path,{cache:'no-store'});
+    if(!res.ok)return null;
+    return await res.text();
+  }catch(e){return null;}
 }
 
 async function loadThemeFromFolder(folderId,displayName){
@@ -898,16 +933,16 @@ async function loadThemeFromFolder(folderId,displayName){
 }
 
 async function loadFileBasedThemes(){
-  themesStatus={state:'loading',count:0,message:'Scanning '+THEMES_DIR+' folder…'};
+  themesStatus={state:'loading',count:0,message:'Scanning remote themes folder…'};
   const fileThemes=[];
   if(IS_FILE){
-    themesStatus={state:'error',count:0,message:'Cannot read folder from file://. Host the page over HTTP.'};
+    themesStatus={state:'error',count:0,message:'Cannot read themes from file://. Host the page over HTTP.'};
     return fileThemes;
   }
 
   const manifestText=await fetchText(THEMES_DIR+'/manifest.json');
   if(!manifestText){
-    themesStatus={state:'error',count:0,message:'No manifest.json found in '+THEMES_DIR+'/. Create it to declare your themes.'};
+    themesStatus={state:'error',count:0,message:'Could not load manifest.json from the remote repository. If the repo was just updated, jsDelivr may need a minute to cache it — try Reload.'};
     return fileThemes;
   }
 
@@ -930,7 +965,7 @@ async function loadFileBasedThemes(){
   results.forEach(t=>{if(t)fileThemes.push(t);});
 
   if(fileThemes.length){
-    themesStatus={state:'ok',count:fileThemes.length,message:fileThemes.length+' of '+list.length+' theme'+(fileThemes.length===1?'':'s')+' loaded from '+THEMES_DIR+'/'};
+    themesStatus={state:'ok',count:fileThemes.length,message:fileThemes.length+' of '+list.length+' theme'+(fileThemes.length===1?'':'s')+' loaded from remote'};
   }else{
     themesStatus={state:'error',count:0,message:'manifest.json lists '+list.length+' theme'+(list.length===1?'':'s')+' but none could be loaded. Check that each folder has a color.ini.'};
   }
@@ -992,14 +1027,39 @@ const sha256=s=>crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
 const base64url=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
 
 async function startLogin(){
-  if(IS_FILE){showToast('Cannot log in from a local file. Upload to a host first.',6000);return;}
-  const verifier=randomString(128);
-  sessionStorage.setItem('pkce_verifier',verifier);
-  const params=new URLSearchParams({
-    client_id:CLIENT_ID,response_type:'code',redirect_uri:REDIRECT_URI,scope:SCOPES,
-    show_dialog:'true',code_challenge_method:'S256',code_challenge:base64url(await sha256(verifier))
-  });
-  window.location.href='https://accounts.spotify.com/authorize?'+params;
+  setLoginStatus('');
+  if(IS_FILE){
+    setLoginStatus('You cannot sign in from a local <code>file://</code> URL. Upload the page to a web server (GitHub Pages, Netlify, etc.) and try again.','error');
+    return;
+  }
+  try{
+    if(!window.crypto||!crypto.subtle){
+      setLoginStatus('Your browser does not support the Web Crypto API required for secure login. Use a modern browser over HTTPS.','error');
+      return;
+    }
+    const verifier=randomString(128);
+    try{sessionStorage.setItem('pkce_verifier',verifier);}
+    catch(e){
+      setLoginStatus('Your browser is blocking session storage. Allow cookies/site data for this page and try again.','error');
+      return;
+    }
+    const params=new URLSearchParams({
+      client_id:CLIENT_ID,
+      response_type:'code',
+      redirect_uri:REDIRECT_URI,
+      scope:SCOPES,
+      show_dialog:'true',
+      code_challenge_method:'S256',
+      code_challenge:base64url(await sha256(verifier))
+    });
+    console.log('%cCadence — Starting Spotify OAuth','color:#1DB954;font-weight:bold');
+    console.log('Redirect URI:',REDIRECT_URI);
+    console.log('If Spotify shows an error page, this exact URI must be registered in your Spotify Developer Dashboard under "Redirect URIs".');
+    window.location.href='https://accounts.spotify.com/authorize?'+params;
+  }catch(e){
+    console.error('Login start error:',e);
+    setLoginStatus('<strong>Could not start login.</strong><br>'+escapeHtml(e.message||'Unknown error')+'.<br>Check the browser console for details.','error');
+  }
 }
 
 function storeToken(data){
@@ -1009,18 +1069,60 @@ function storeToken(data){
 }
 
 async function exchangeCode(code){
-  const res=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:CLIENT_ID,grant_type:'authorization_code',code,redirect_uri:REDIRECT_URI,code_verifier:sessionStorage.getItem('pkce_verifier')})});
-  if(!res.ok)throw new Error('Token exchange failed');
-  storeToken(await res.json());
+  const verifier=sessionStorage.getItem('pkce_verifier');
+  if(!verifier){
+    throw new Error('The login verifier is missing. This happens if the login page was opened in a different tab, or if session storage was cleared between clicks. Click Continue with Spotify to start again.');
+  }
+  let res;
+  try{
+    res=await fetch('https://accounts.spotify.com/api/token',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({
+        client_id:CLIENT_ID,
+        grant_type:'authorization_code',
+        code,
+        redirect_uri:REDIRECT_URI,
+        code_verifier:verifier
+      })
+    });
+  }catch(e){
+    throw new Error('Could not reach Spotify\'s token endpoint ('+e.message+'). Check your internet connection.');
+  }
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok){
+    const detail=data.error_description||data.error||('HTTP '+res.status);
+    let hint='';
+    if(data.error==='invalid_grant')hint=' The code may have expired, already been used, or the redirect URI in the request does not exactly match the one registered in your Spotify app settings.';
+    else if(data.error==='invalid_client')hint=' The Client ID is not recognised. Check the CLIENT_ID constant at the top of the script.';
+    else if(data.error==='redirect_uri_mismatch')hint=' The redirect URI does not match what is registered in your Spotify app settings.';
+    throw new Error(detail+hint);
+  }
+  if(!data.access_token)throw new Error('Spotify did not return an access token.');
+  storeToken(data);
+  try{sessionStorage.removeItem('pkce_verifier');}catch(e){}
 }
 
 async function refreshAccessToken(){
   const rt=localStorage.getItem('spotify_refresh_token');
   if(!rt)return null;
-  const res=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:CLIENT_ID,grant_type:'refresh_token',refresh_token:rt})});
-  if(!res.ok)return null;
-  storeToken(await res.json());
-  return accessToken;
+  try{
+    const res=await fetch('https://accounts.spotify.com/api/token',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({client_id:CLIENT_ID,grant_type:'refresh_token',refresh_token:rt})
+    });
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      console.warn('Refresh token rejected:',err);
+      return null;
+    }
+    storeToken(await res.json());
+    return accessToken;
+  }catch(e){
+    console.warn('Refresh request failed:',e);
+    return null;
+  }
 }
 
 async function getValidToken(){if(accessToken&&Date.now()<tokenExpiresAt)return accessToken;return await refreshAccessToken();}
@@ -1085,7 +1187,7 @@ function handlePlayerState(state){
   if(!state){
     isPaused=true;
     currentPosition=0;currentDuration=0;positionTimestamp=Date.now();
-    activeTrackUri=null;currentArtUrl=null;
+    activeTrackUri=null;currentArtUrl=null;activeContextUri=null;
     playBtn.innerHTML=ICON_PLAY;
     nowTitleEl.textContent='Nothing playing';
     nowArtistEl.textContent='Select a track';
@@ -1103,6 +1205,7 @@ function handlePlayerState(state){
   currentPosition=Math.min(state.position||0,currentDuration||Infinity);
   positionTimestamp=Date.now();
   activeTrackUri=t?t.uri:null;
+  activeContextUri=(state.context&&state.context.uri)?state.context.uri:null;
 
   if(t)updateNowPlaying(t);
   updateActiveTrack(activeTrackUri);
@@ -1160,6 +1263,7 @@ function startPolling(){
       activeTrackUri=cur.uri;
       updateNowPlaying(cur);
     }
+    activeContextUri=(state.context&&state.context.uri)?state.context.uri:null;
     playBtn.innerHTML=isPaused?ICON_PLAY:ICON_PAUSE;
     updateActiveTrack(activeTrackUri);
     if(!seekDragging)updateProgressUI();
@@ -1201,6 +1305,17 @@ function updateProgressUI(){
   timeTotalEl.textContent=formatTime(currentDuration);
 }
 
+function refreshPlayButtons(){
+  const ctx=activeContextUri;
+  const playing=!isPaused;
+  document.querySelectorAll('[data-playlist-id]').forEach(btn=>{
+    const pid=btn.dataset.playlistId;
+    if(!pid)return;
+    const isActive=ctx==='spotify:playlist:'+pid;
+    btn.innerHTML=(isActive&&playing)?ICON_PAUSE:ICON_PLAY;
+  });
+}
+
 function updateActiveTrack(uri){
   document.querySelectorAll('.track-row').forEach(r=>{
     const active=r.dataset.uri===uri;
@@ -1209,6 +1324,7 @@ function updateActiveTrack(uri){
     const icon=r.querySelector('.play-icon');
     if(icon)icon.innerHTML=(active&&!isPaused)?ICON_PAUSE:ICON_PLAY;
   });
+  refreshPlayButtons();
 }
 
 async function fetchUserProfile(){
@@ -1438,7 +1554,15 @@ function renderHome(){
     const cover=document.createElement('div');cover.className='cover-wrap';
     setImg(cover,pickImage(p.images),ICON_NOTE_BIG,true);
     const fab=document.createElement('button');fab.className='play-fab';fab.innerHTML=ICON_PLAY;
-    fab.addEventListener('click',e=>{e.stopPropagation();openPlaylist(p.id,true);});
+    fab.dataset.playlistId=p.id;
+    fab.addEventListener('click',e=>{
+      e.stopPropagation();
+      if(activeContextUri==='spotify:playlist:'+p.id){
+        togglePlayPause();
+      }else{
+        openPlaylist(p.id,true);
+      }
+    });
     cover.appendChild(fab);
     const nameEl=document.createElement('div');nameEl.className='card-name';nameEl.textContent=p.name;
     const desc=document.createElement('div');desc.className='card-desc';desc.textContent='Playlist • '+playlistTrackCount(p)+' tracks';
@@ -1450,6 +1574,7 @@ function renderHome(){
   wrap.appendChild(section);
 
   mainEl.appendChild(wrap);mainEl.scrollTop=0;
+  refreshPlayButtons();
 }
 
 async function openPlaylist(id,autoPlay){
@@ -1488,7 +1613,14 @@ function renderPlaylistView(pl,tracks){
   header.appendChild(coverBox);header.appendChild(info);
   const actions=document.createElement('div');actions.className='playlist-actions';
   const bigPlay=document.createElement('button');bigPlay.className='big-play';bigPlay.innerHTML=ICON_PLAY;
-  bigPlay.addEventListener('click',()=>{if(tracks.length)playTrackInPlaylist(tracks[0].uri,pl.id);});
+  bigPlay.dataset.playlistId=pl.id;
+  bigPlay.addEventListener('click',()=>{
+    if(activeContextUri==='spotify:playlist:'+pl.id){
+      togglePlayPause();
+    }else if(tracks.length){
+      playTrackInPlaylist(tracks[0].uri,pl.id);
+    }
+  });
   actions.appendChild(bigPlay);
   const head=document.createElement('div');head.className='tracklist-head';
   head.innerHTML='<span style="text-align:right">#</span><span></span><span>Title</span><span>Album</span><span style="text-align:right">⏱</span><span></span>';
@@ -1772,7 +1904,15 @@ async function playSearchResult(index){
   if(!uris.length)return;
   try{
     const res=await apiFetch('https://api.spotify.com/v1/me/player/play?device_id='+deviceId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({uris,offset:{position:index}})});
-    if(!res.ok){const e=await res.json().catch(()=>({}));showToast('Playback failed: '+((e.error&&e.error.message)||res.status));}
+    if(!res.ok){
+      const e=await res.json().catch(()=>({}));
+      showToast('Playback failed: '+((e.error&&e.error.message)||res.status));
+    }else{
+      activeContextUri=null;
+      isPaused=false;
+      playBtn.innerHTML=ICON_PAUSE;
+      updateActiveTrack(activeTrackUri);
+    }
   }catch(e){showToast('Playback failed: '+e.message);}
 }
 
@@ -1781,8 +1921,17 @@ async function playTrackInPlaylist(trackUri,playlistId){
   await activateAudio();
   try{
     let res=await apiFetch('https://api.spotify.com/v1/me/player/play?device_id='+deviceId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({context_uri:'spotify:playlist:'+playlistId,offset:{uri:trackUri}})});
+    const contextPlay=res.ok;
     if(!res.ok)res=await apiFetch('https://api.spotify.com/v1/me/player/play?device_id='+deviceId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({uris:[trackUri]})});
-    if(!res.ok){const e=await res.json().catch(()=>({}));showToast('Playback failed: '+((e.error&&e.error.message)||res.status));}
+    if(!res.ok){
+      const e=await res.json().catch(()=>({}));
+      showToast('Playback failed: '+((e.error&&e.error.message)||res.status));
+    }else{
+      activeContextUri=contextPlay?'spotify:playlist:'+playlistId:null;
+      isPaused=false;
+      playBtn.innerHTML=ICON_PAUSE;
+      updateActiveTrack(activeTrackUri);
+    }
   }catch(e){showToast('Playback failed: '+e.message);}
 }
 
@@ -1791,7 +1940,15 @@ async function playSingleUri(uri){
   await activateAudio();
   try{
     const res=await apiFetch('https://api.spotify.com/v1/me/player/play?device_id='+deviceId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({uris:[uri]})});
-    if(!res.ok){const e=await res.json().catch(()=>({}));showToast('Playback failed: '+((e.error&&e.error.message)||res.status));}
+    if(!res.ok){
+      const e=await res.json().catch(()=>({}));
+      showToast('Playback failed: '+((e.error&&e.error.message)||res.status));
+    }else{
+      activeContextUri=null;
+      isPaused=false;
+      playBtn.innerHTML=ICON_PAUSE;
+      updateActiveTrack(activeTrackUri);
+    }
   }catch(e){showToast('Playback failed: '+e.message);}
 }
 
@@ -1846,7 +2003,7 @@ function drawSettings(){
       ${['themes','appearance','background','playback'].map(t=>`<button class="tab-btn ${settingsTab===t?'active':''}" data-tab="${t}">${tabLabel(t)}</button>`).join('')}
     </div>
     <div id="tab-body">${tabBody(settingsTab)}</div>
-    <div class="settings-foot">All themes load from <code>Themes/</code> next to this page. Nothing is hardcoded — edit files in that folder to change what appears here.</div>
+    <div class="settings-foot">Themes load from the remote repository via jsDelivr. Requests come from this site.</div>
   </div>`;
   bindSettings();
   mainEl.scrollTop=0;
@@ -1859,28 +2016,17 @@ function emptyThemesBlock(){
     <div class="themes-status err">
       <div>
         <strong>No themes loaded</strong>
-        <small>${themesStatus.message||'Add a Themes folder next to this file.'}</small>
+        <small>${themesStatus.message||'Could not reach the remote theme repository.'}</small>
       </div>
       <button class="btn-ghost" id="reload-themes">Reload</button>
     </div>
     <div class="setting-group">
       <div class="themes-empty">
-        <p><strong>Add themes to <code>Themes/</code>:</strong></p>
-        <ol>
-          <li>Create a folder called <code>Themes/</code> next to this HTML file.</li>
-          <li>Inside it, create <code>manifest.json</code> listing your themes (example below).</li>
-          <li>For each theme, create <code>Themes/&lt;Name&gt;/color.ini</code> with a <code>[Base]</code> section containing <code>main</code>, <code>sidebar</code>, <code>text</code>, <code>subtext</code> and <code>button</code> colors.</li>
-          <li>Optionally add <code>Themes/&lt;Name&gt;/user.css</code> for extra styling.</li>
-          <li>Click <strong>Reload</strong> above.</li>
-        </ol>
-        <p style="margin-top:16px"><strong>Example <code>manifest.json</code>:</strong></p>
-        <pre style="text-align:left;background:rgba(255,255,255,0.05);padding:12px;border-radius:8px;font-size:11.5px;overflow-x:auto;margin-top:8px">${escapeHtml(JSON.stringify({themes:[{id:'Blossom',name:'Blossom'},{id:'Dracula',name:'Dracula'}]},null,2))}</pre>
+        <p><strong>Remote theme source:</strong></p>
+        <pre style="text-align:left;background:rgba(255,255,255,0.05);padding:12px;border-radius:8px;font-size:11.5px;overflow-x:auto;margin-top:8px">${escapeHtml(THEMES_DIR)}</pre>
+        <p style="margin-top:16px">The repository must contain a <code>manifest.json</code> and theme folders with <code>color.ini</code> files. If the repo was just updated, jsDelivr may take a minute to pick up the change — try Reload.</p>
       </div>
     </div>`;
-}
-
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 function tabBody(tab){
@@ -2172,6 +2318,7 @@ function signOut(){
   player=null;deviceId=null;deviceReady=false;sdkReady=false;
   accessToken=null;tokenExpiresAt=0;
   currentUserId=null;currentUserProfile=null;
+  activeContextUri=null;
   clearCaches();
   plMembership.clear();
   localStorage.removeItem('spotify_refresh_token');
@@ -2278,39 +2425,66 @@ startUiTick();
 
 detectDevice();
 
+const redirectEl=$('login-redirect-uri');
+if(redirectEl)redirectEl.textContent=REDIRECT_URI;
+
 (async function boot(){
-  await refreshThemes();
   detectDevice();
 
-  if(IS_FILE){showToast('Upload this file to a host to enable sign-in.',8000);return;}
+  refreshThemes().catch(e=>console.warn('Theme load failed:',e));
 
   const params=new URLSearchParams(window.location.search);
   const code=params.get('code');
   const error=params.get('error');
+  const errorDesc=params.get('error_description');
 
   if(error){
     window.history.replaceState({},document.title,window.location.pathname);
-    showToast('Spotify authorization was denied.');
+    setLoginStatus('<strong>Spotify denied authorisation.</strong><br>'+escapeHtml(errorDesc||error)+'<br>Make sure you approve every permission on the Spotify consent screen.','error');
     return;
   }
 
   if(code){
     window.history.replaceState({},document.title,window.location.pathname);
+    setLoginStatus('Exchanging authorization code with Spotify…','info');
     try{
       await exchangeCode(code);
-      clearCaches();showApp();
+      clearCaches();
+      showApp();
+      setLoginStatus('');
       await bootApp();
-    }catch(e){showToast('Sign-in failed: '+e.message);}
+    }catch(e){
+      console.error('Login error:',e);
+      setLoginStatus(
+        '<strong>Sign-in failed.</strong><br>'+
+        escapeHtml(e.message||'Unknown error')+
+        '<br><br>Common causes:<br>'+
+        '• The redirect URI <code>'+escapeHtml(REDIRECT_URI)+'</code> is not registered in your Spotify app settings.<br>'+
+        '• The <code>CLIENT_ID</code> does not belong to your Spotify app.<br>'+
+        '• The login page was opened in a different tab than the one that returned.<br><br>'+
+        'Open the browser console (F12) for details. Click Continue with Spotify to try again.',
+        'error'
+      );
+      loginEl.style.display='flex';
+      appEl.style.display='none';
+    }
     return;
   }
 
   if(localStorage.getItem('spotify_refresh_token')){
-    if(await refreshAccessToken()){
-      showApp();
-      await bootApp();
-      return;
+    try{
+      if(await refreshAccessToken()){
+        showApp();
+        await bootApp();
+        return;
+      }
+      localStorage.removeItem('spotify_refresh_token');
+      setLoginStatus('Your saved Spotify session expired. Click Continue with Spotify to sign in again.','info');
+    }catch(e){
+      localStorage.removeItem('spotify_refresh_token');
+      console.warn('Session restore failed:',e);
+      setLoginStatus('Could not restore your saved session. Please sign in again.','info');
     }
-    localStorage.removeItem('spotify_refresh_token');
   }
 })();
 </script>
