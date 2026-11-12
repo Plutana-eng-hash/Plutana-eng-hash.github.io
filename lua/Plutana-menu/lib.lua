@@ -22,8 +22,8 @@ local Themes = {
 		Success             = Color3.fromRGB(255, 255, 255),
 		Warning             = Color3.fromRGB(225, 225, 225),
 		Danger              = Color3.fromRGB(170, 170, 170),
-		Text                = Color3.fromRGB(255, 255, 255),
-		TextDim             = Color3.fromRGB(225, 225, 225),
+		Text                = Color3.fromRGB(254, 254, 254),
+		TextDim             = Color3.fromRGB(95, 95, 95),
 		Snow                = Color3.fromRGB(255, 255, 255),
 	},
 	Light = {
@@ -42,7 +42,7 @@ local Themes = {
 		Danger              = Color3.fromRGB(130, 130, 130),
 		Text                = Color3.fromRGB(20, 20, 20),
 		TextDim             = Color3.fromRGB(95, 95, 95),
-		Snow                = Color3.fromRGB(170, 170, 170),
+		Snow                = Color3.fromRGB(0, 0, 0),
 	},
 }
 
