@@ -4,37 +4,31 @@ local TweenService     = game:GetService("TweenService")
 local RunService       = game:GetService("RunService")
 local GuiService       = game:GetService("GuiService")
 
---=====================================================================================
--- Theme (edit these values to restyle the entire library)
---=====================================================================================
 local Library = {}
-Library.Version = "2.0"
+Library.Version = "2.1"
 
 local Theme = {
-	Background          = Color3.fromRGB(10, 10, 10),    -- Near-black
-	BackgroundTop       = Color3.fromRGB(20, 20, 20),    -- Slightly lighter for contrast
-	Surface             = Color3.fromRGB(30, 30, 30),    -- Dark gray base
-	SurfaceTransparency = 0.12,
-	SurfaceHover        = Color3.fromRGB(45, 45, 45),    -- Lighter gray for hover
-	SurfaceActive       = Color3.fromRGB(60, 60, 60),    -- Distinct gray for activation
-	Stroke              = Color3.fromRGB(50, 50, 50),    -- Subtle border
-	StrokeHover         = Color3.fromRGB(100, 100, 100), -- Bright border for interaction
-	Accent              = Color3.fromRGB(200, 200, 200), -- Neutral "Accent" (Light Gray)
-	Accent2             = Color3.fromRGB(150, 150, 150), -- Secondary neutral
-	Success             = Color3.fromRGB(255, 255, 255), -- Pure white for positive
-	Warning             = Color3.fromRGB(180, 180, 180), -- Muted gray for warning
-	Danger              = Color3.fromRGB(120, 120, 120), -- Duller gray for danger
-	Text                = Color3.fromRGB(255, 255, 255), -- Pure white text
-	TextDim             = Color3.fromRGB(160, 160, 160), -- Soft gray for non-priority text
+	Background          = Color3.fromRGB(0, 0, 0),
+	BackgroundTop       = Color3.fromRGB(12, 12, 12),
+	Surface             = Color3.fromRGB(22, 22, 22),
+	SurfaceTransparency = 0,
+	SurfaceHover        = Color3.fromRGB(45, 45, 45),
+	SurfaceActive       = Color3.fromRGB(70, 70, 70),
+	Stroke              = Color3.fromRGB(80, 80, 80),
+	StrokeHover         = Color3.fromRGB(200, 200, 200),
+	Accent              = Color3.fromRGB(255, 255, 255),
+	Accent2             = Color3.fromRGB(170, 170, 170),
+	Success             = Color3.fromRGB(255, 255, 255),
+	Warning             = Color3.fromRGB(200, 200, 200),
+	Danger              = Color3.fromRGB(140, 140, 140),
+	Text                = Color3.fromRGB(255, 255, 255),
+	TextDim             = Color3.fromRGB(200, 200, 200),
 	Font                = Enum.Font.GothamMedium,
 	FontBold            = Enum.Font.GothamBold,
 	Corner              = UDim.new(0, 8),
 }
-Library.Theme = Theme -- exposed so consumers can tweak colors before creating a window
+Library.Theme = Theme
 
---=====================================================================================
--- Core helpers
---=====================================================================================
 local connections = {}
 
 local function connect(signal, callback)
@@ -50,7 +44,7 @@ local function new(className, properties, children)
 	if properties then
 		for key, value in pairs(properties) do
 			if key == "Parent" then
-				parent = value -- parent last so the object never renders half-configured
+				parent = value
 			else
 				instance[key] = value
 			end
@@ -116,7 +110,6 @@ local function isPointerMove(input)
 		or input.UserInputType == Enum.UserInputType.Touch
 end
 
--- Screen-space pointer position that matches AbsolutePosition (the ScreenGui ignores the top inset)
 local function pointerPosition(input)
 	if input and input.UserInputType == Enum.UserInputType.Touch then
 		return Vector2.new(input.Position.X, input.Position.Y + GuiService:GetGuiInset().Y)
@@ -131,11 +124,7 @@ local function pointInGui(guiObject, point)
 		and point.Y >= pos.Y and point.Y <= pos.Y + size.Y
 end
 
---=====================================================================================
--- Root GUI (ScreenGui -> Root frame -> UIScale for responsiveness)
---=====================================================================================
 local function resolveParent()
-	-- gethui() exists in most executors; otherwise fall back to CoreGui / PlayerGui.
 	local ok, result = pcall(function()
 		if typeof(gethui) == "function" then
 			return gethui()
@@ -152,7 +141,6 @@ end
 
 local guiParent = resolveParent()
 
--- Re-executing the script replaces the previous copy instead of stacking windows
 local previous = guiParent:FindFirstChild("ModernUILibrary")
 if previous then
 	previous:Destroy()
@@ -181,16 +169,12 @@ local function updateScale()
 	if viewport.Y < 1 then
 		return
 	end
-	-- Shrinks the UI on small screens, never enlarges past 1:1
 	uiScale.Scale = math.clamp(viewport.Y / 760, 0.6, 1)
 end
 
 root:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateScale)
 updateScale()
 
---=====================================================================================
--- Notifications
---=====================================================================================
 local notifyHolder = new("Frame", {
 	Name = "Notifications",
 	AnchorPoint = Vector2.new(1, 1),
@@ -309,9 +293,6 @@ function Library:Notify(config)
 	end)
 end
 
---=====================================================================================
--- Snow background
---=====================================================================================
 local function createSnow(parent, count, height, isActive)
 	local snow = new("Frame", {
 		Name = "Snow",
@@ -388,9 +369,6 @@ local function createSnow(parent, count, height, isActive)
 	return snow
 end
 
---=====================================================================================
--- Shared element helpers
---=====================================================================================
 local function createRow(tab, name, height)
 	local row = new("Frame", {
 		Name = name,
@@ -432,7 +410,6 @@ local function bindHover(trigger, row, stroke)
 	end)
 end
 
--- Returns a function that spawns a ripple at the mouse position
 local function addRippleLayer(button, radius)
 	local layer = new("CanvasGroup", {
 		Name = "Ripples",
@@ -478,9 +455,6 @@ local function addRippleLayer(button, radius)
 	end
 end
 
---=====================================================================================
--- Tab object methods
---=====================================================================================
 local TabMethods = {}
 TabMethods.__index = TabMethods
 
@@ -489,9 +463,6 @@ function TabMethods:_nextOrder()
 	return self.ElementCount
 end
 
--------------------------------------------------------------------------------------
--- Section / Label / Paragraph
--------------------------------------------------------------------------------------
 function TabMethods:CreateSection(text)
 	local holder = new("Frame", {
 		Name = "Section",
@@ -615,9 +586,6 @@ function TabMethods:CreateParagraph(config)
 	return object
 end
 
--------------------------------------------------------------------------------------
--- Button
--------------------------------------------------------------------------------------
 function TabMethods:CreateButton(config)
 	config = config or {}
 	local name = config.Name or "Button"
@@ -648,7 +616,6 @@ function TabMethods:CreateButton(config)
 		Parent = button,
 	})
 
-	-- Small accent bar on the left that grows on hover
 	local accentBar = new("Frame", {
 		Size = UDim2.new(0, 3, 0, 0),
 		Position = UDim2.new(0, 0, 0.5, 0),
@@ -689,9 +656,6 @@ function TabMethods:CreateButton(config)
 	return object
 end
 
--------------------------------------------------------------------------------------
--- Toggle
--------------------------------------------------------------------------------------
 function TabMethods:CreateToggle(config)
 	config = config or {}
 	local name = config.Name or "Toggle"
@@ -740,6 +704,7 @@ function TabMethods:CreateToggle(config)
 
 		tween(switch, 0.2, { BackgroundColor3 = value and Theme.Accent or Theme.SurfaceActive })
 		tween(switchStroke, 0.2, { Color = value and Theme.Accent or Theme.Stroke })
+		tween(knob, 0.2, { BackgroundColor3 = value and Theme.Background or Theme.Text })
 		tween(knob, 0.3, {
 			Position = value and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0),
 		}, Enum.EasingStyle.Back)
@@ -765,9 +730,6 @@ function TabMethods:CreateToggle(config)
 	return toggle
 end
 
--------------------------------------------------------------------------------------
--- Slider
--------------------------------------------------------------------------------------
 function TabMethods:CreateSlider(config)
 	config = config or {}
 	local name     = config.Name or "Slider"
@@ -844,7 +806,6 @@ function TabMethods:CreateSlider(config)
 	applyCorner(knob, UDim.new(1, 0))
 	local knobStroke = applyStroke(knob, Theme.Accent, 2)
 
-	-- Larger invisible hitbox so the slider is easy to grab
 	local hitbox = new("TextButton", {
 		Size = UDim2.new(1, -28, 0, 26),
 		Position = UDim2.new(0, 14, 0, 30),
@@ -933,9 +894,6 @@ function TabMethods:CreateSlider(config)
 	return slider
 end
 
--------------------------------------------------------------------------------------
--- Dropdown (single or multi select, expands inline and pushes the page content down)
--------------------------------------------------------------------------------------
 function TabMethods:CreateDropdown(config)
 	config = config or {}
 	local name     = config.Name or "Dropdown"
@@ -1000,7 +958,6 @@ function TabMethods:CreateDropdown(config)
 		Parent = header,
 	})
 
-	-- Chevron drawn from two rotated bars (no font glyph, so it can never render as a box)
 	local chevron = new("Frame", {
 		Name = "Chevron",
 		Size = UDim2.fromOffset(12, 8),
@@ -1193,7 +1150,6 @@ function TabMethods:CreateDropdown(config)
 				Parent = optionButton,
 			})
 
-			-- Accent dot marks the selected option(s)
 			local dot = new("Frame", {
 				Size = UDim2.fromOffset(6, 6),
 				Position = UDim2.new(1, -14, 0.5, 0),
@@ -1292,7 +1248,6 @@ function TabMethods:CreateDropdown(config)
 		end
 	end)
 
-	-- Close when clicking somewhere else on screen
 	connect(UserInputService.InputBegan, function(input)
 		if not isOpen or not isPointer(input) then
 			return
@@ -1308,9 +1263,6 @@ function TabMethods:CreateDropdown(config)
 	return dropdown
 end
 
--------------------------------------------------------------------------------------
--- Textbox
--------------------------------------------------------------------------------------
 function TabMethods:CreateTextbox(config)
 	config = config or {}
 	local name     = config.Name or "Textbox"
@@ -1370,14 +1322,11 @@ function TabMethods:CreateTextbox(config)
 	return textbox
 end
 
--------------------------------------------------------------------------------------
--- Keybind
--------------------------------------------------------------------------------------
 function TabMethods:CreateKeybind(config)
 	config = config or {}
 	local name     = config.Name or "Keybind"
-	local callback = config.Callback -- fired when the bound key changes
-	local pressed  = config.Pressed  -- fired when the bound key is pressed
+	local callback = config.Callback
+	local pressed  = config.Pressed
 
 	local row, stroke = createRow(self, name, 40)
 	addNameLabel(row, name, 120)
@@ -1444,9 +1393,9 @@ function TabMethods:CreateKeybind(config)
 				tween(keyStroke, 0.2, { Color = Theme.Stroke })
 
 				if input.KeyCode == Enum.KeyCode.Escape then
-					render() -- cancel
+					render()
 				elseif input.KeyCode == Enum.KeyCode.Backspace then
-					setKey(nil, true) -- clear
+					setKey(nil, true)
 				else
 					setKey(input.KeyCode, true)
 				end
@@ -1466,9 +1415,6 @@ function TabMethods:CreateKeybind(config)
 	return keybind
 end
 
--------------------------------------------------------------------------------------
--- Color picker (inline expanding panel with saturation/value box, hue bar, hex input)
--------------------------------------------------------------------------------------
 function TabMethods:CreateColorPicker(config)
 	config = config or {}
 	local name     = config.Name or "Color"
@@ -1529,7 +1475,6 @@ function TabMethods:CreateColorPicker(config)
 	applyCorner(panel, UDim.new(0, 8))
 	applyStroke(panel)
 
-	-- Saturation / value box
 	local svBox = new("TextButton", {
 		Name = "SV",
 		Size = UDim2.new(1, -46, 0, 100),
@@ -1578,7 +1523,6 @@ function TabMethods:CreateColorPicker(config)
 	applyCorner(svCursor, UDim.new(1, 0))
 	applyStroke(svCursor, Color3.new(1, 1, 1), 2)
 
-	-- Hue bar
 	local hueBar = new("TextButton", {
 		Name = "Hue",
 		Size = UDim2.new(0, 16, 0, 100),
@@ -1616,7 +1560,6 @@ function TabMethods:CreateColorPicker(config)
 	applyCorner(hueMarker, UDim.new(1, 0))
 	applyStroke(hueMarker, Color3.fromRGB(20, 20, 28), 1)
 
-	-- Hex input
 	local hexFrame = new("Frame", {
 		Size = UDim2.new(1, -20, 0, 26),
 		Position = UDim2.new(0, 10, 0, 118),
@@ -1704,7 +1647,6 @@ function TabMethods:CreateColorPicker(config)
 		end
 	end
 
-	-- Dragging
 	local dragMode = nil
 
 	local function updateFromPointer(input)
@@ -1803,9 +1745,6 @@ function TabMethods:CreateColorPicker(config)
 	return picker
 end
 
---=====================================================================================
--- Window object methods
---=====================================================================================
 local WindowMethods = {}
 WindowMethods.__index = WindowMethods
 
@@ -2018,9 +1957,10 @@ function WindowMethods:Notify(config)
 	Library:Notify(config)
 end
 
---=====================================================================================
--- Library entry point
---=====================================================================================
+function WindowMethods:Destroy()
+	Library:Destroy()
+end
+
 function Library:CreateWindow(config)
 	config = config or {}
 	local title      = config.Title or "Window"
@@ -2061,13 +2001,11 @@ function Library:CreateWindow(config)
 		OpenToken = 0,
 	}, WindowMethods)
 
-	-- Snow (behind everything else)
 	window.Snow = createSnow(frame, snowCount, fullHeight, function()
 		return window.Visible and window.SnowEnabled and not window.Minimized
 	end)
 	window.Snow.Visible = window.SnowEnabled
 
-	-- Animated gradient border (inset so the CanvasGroup never clips it)
 	local borderOverlay = new("Frame", {
 		Name = "Border",
 		Position = UDim2.fromOffset(2, 2),
@@ -2093,7 +2031,6 @@ function Library:CreateWindow(config)
 		{ Rotation = 360 }
 	):Play()
 
-	-- Title bar (drag handle)
 	local titleBar = new("Frame", {
 		Name = "TitleBar",
 		Size = UDim2.new(1, 0, 0, 44),
@@ -2148,7 +2085,6 @@ function Library:CreateWindow(config)
 		})
 	end
 
-	-- Window buttons (icons are drawn from frames so they never depend on font glyphs)
 	local function windowButton(offsetX, hoverColor)
 		local b = new("TextButton", {
 			Size = UDim2.fromOffset(26, 26),
@@ -2195,11 +2131,10 @@ function Library:CreateWindow(config)
 	local minimizeButton, minimizeBar, minimizeBars = windowButton(-68, Theme.Accent)
 	table.insert(minimizeBars, minimizeBar(0))
 
-	local closeButton, closeBar, closeBars = windowButton(-36, Theme.Danger)
+	local closeButton, closeBar, closeBars = windowButton(-36, Theme.Accent)
 	table.insert(closeBars, closeBar(45))
 	table.insert(closeBars, closeBar(-45))
 
-	-- Animated accent line under the title bar
 	local line = new("Frame", {
 		Name = "TitleLine",
 		Size = UDim2.new(1, -28, 0, 2),
@@ -2225,7 +2160,6 @@ function Library:CreateWindow(config)
 		{ Offset = Vector2.new(0.6, 0) }
 	):Play()
 
-	-- Body: left tab bar + right content area (fixed height so minimizing just clips it)
 	local body = new("Frame", {
 		Name = "Body",
 		Position = UDim2.new(0, 0, 0, 48),
@@ -2284,7 +2218,6 @@ function Library:CreateWindow(config)
 	})
 	applyCorner(indicator, UDim.new(1, 0))
 
-	-- Footer card with the local player's name
 	local footer = new("Frame", {
 		Size = UDim2.new(1, -12, 0, 40),
 		Position = UDim2.new(0, 6, 1, -46),
@@ -2349,7 +2282,6 @@ function Library:CreateWindow(config)
 		window:SetMinimized(not window.Minimized)
 	end)
 
-	-- Dragging
 	local dragging = false
 	local dragStart, startPosition
 
@@ -2380,7 +2312,6 @@ function Library:CreateWindow(config)
 		end
 	end)
 
-	-- Optional keyboard shortcut to show/hide the window
 	if config.ToggleKey then
 		connect(UserInputService.InputBegan, function(input, gameProcessed)
 			if gameProcessed then
@@ -2392,7 +2323,6 @@ function Library:CreateWindow(config)
 		end)
 	end
 
-	-- Floating open button for touch-only devices (no keyboard to toggle with)
 	if config.MobileButton ~= false
 		and UserInputService.TouchEnabled
 		and not UserInputService.KeyboardEnabled then
@@ -2404,7 +2334,7 @@ function Library:CreateWindow(config)
 			BackgroundColor3 = Theme.Accent,
 			BorderSizePixel = 0,
 			Text = "UI",
-			TextColor3 = Theme.Text,
+			TextColor3 = Theme.Background,
 			TextSize = 14,
 			Font = Theme.FontBold,
 			AutoButtonColor = false,
