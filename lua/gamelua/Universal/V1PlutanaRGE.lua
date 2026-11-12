@@ -1,7 +1,7 @@
 local LIBRARY_URL = "https://raw.githubusercontent.com/Plutana-eng-hash/Plutana-eng-hash.github.io/refs/heads/main/lua/Plutana-menu/lib.lua"
-local CONFIG_FILE = "ControlPanel_config.json"
+local CONFIG_FILE = "Plutana-Uni_config.json"
 
-local TAG = "[Control Panel]"
+local TAG = "[Plutana-Uni]"
 local function log(...)   print(TAG, ...) end
 local function warnf(...) warn(TAG, ...)  end
 
@@ -51,14 +51,14 @@ local function createLoadingScreen()
     if not LocalPlayer then return end
     local gui = Instance.new("ScreenGui")
     gui.Name, gui.ResetOnSpawn, gui.IgnoreGuiInset, gui.DisplayOrder =
-        "ControlPanel_Loading", false, true, 10000
+        "PlutanaUni_Loading", false, true, 10000
     local frame = Instance.new("Frame")
     frame.Size, frame.BorderSizePixel = UDim2.fromScale(1, 1), 0
     frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     frame.Parent = gui
     local label = Instance.new("TextLabel")
     label.Size, label.BackgroundTransparency = UDim2.fromScale(1, 1), 1
-    label.Text, label.Font, label.TextSize = "Loading Control Panel...", Enum.Font.GothamMedium, 22
+    label.Text, label.Font, label.TextSize = "Loading Plutana-Uni...", Enum.Font.GothamMedium, 22
     label.TextColor3 = Color3.fromRGB(20, 20, 20)
     label.Parent = frame
     gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
@@ -319,7 +319,7 @@ local function createHighlight(player)
     local old = state.highlights[player]
     if old then pcall(old.Destroy, old) end
     local h = Instance.new("Highlight")
-    h.Name, h.Adornee, h.Enabled, h.Parent = "CP_ESP_Highlight", char, false, char
+    h.Name, h.Adornee, h.Enabled, h.Parent = "PlutanaUni_Highlight", char, false, char
     state.highlights[player] = h
 end
 
@@ -551,14 +551,14 @@ end
 
 local function buildPanel(Library)
     local Window = Library:CreateWindow({
-        Title = "Control Panel", Size = UDim2.fromOffset(760, 540),
+        Title = "Plutana-Uni", Size = UDim2.fromOffset(760, 540),
         Theme = "Light", ToggleKey = Enum.KeyCode.Insert,
     })
 
     local function notify(text)
         for _, owner in ipairs({ Library, Window }) do
             if typeof(owner.Notify) == "function" then
-                if pcall(owner.Notify, owner, { Title = "Control Panel", Content = text, Text = text, Duration = 3 }) then
+                if pcall(owner.Notify, owner, { Title = "Plutana-Uni", Content = text, Text = text, Duration = 3 }) then
                     return
                 end
             end
@@ -602,7 +602,6 @@ local function buildPanel(Library)
             })
             if ok then controls[key] = ctl; return end
         end
-        tab:CreateLabel(name .. " (RGB)")
         for i, ch in ipairs({ "R", "G", "B" }) do
             tab:CreateSlider({
                 Name = name .. " " .. ch, Min = 0, Max = 255, Default = math.floor(({ S[key].R, S[key].G, S[key].B })[i] * 255 + .5),
@@ -626,7 +625,6 @@ local function buildPanel(Library)
 
     espTab:CreateSection("Master")
     toggle(espTab, "enabled", "Enable ESP (Master)")
-    espTab:CreateLabel("Master OFF = nothing renders. ON = only the options you enabled.")
     espTab:CreateSection("Overlays")
     toggle(espTab, "box", "Box")
     toggle(espTab, "health", "Health Bar")
@@ -669,7 +667,6 @@ local function buildPanel(Library)
     toggle(aimTab, "aimShowFov", "Show FOV Circle")
     slider(aimTab, "aimFov", "FOV Size", 10, 600, 0, " px")
     color(aimTab, "aimFovColor", "FOV Color")
-    aimTab:CreateLabel("Moves your camera toward the closest player inside the FOV while the button is held.")
 
     silentTab:CreateSection("Silent Aim")
     toggle(silentTab, "silent", "Enable Silent Aim")
@@ -679,7 +676,6 @@ local function buildPanel(Library)
     toggle(silentTab, "silentShowFov", "Show FOV Circle")
     slider(silentTab, "silentFov", "FOV Size", 10, 600, 0, " px")
     color(silentTab, "silentFovColor", "FOV Color")
-    silentTab:CreateLabel("Redirects the game's mouse/raycast hits; the camera does not move. Needs hookmetamethod support, and works only in games that read Mouse.Hit or raycast from the client.")
 
     trigTab:CreateSection("Trigger Bot")
     toggle(trigTab, "trigger", "Enable Trigger Bot")
@@ -688,7 +684,6 @@ local function buildPanel(Library)
     slider(trigTab, "triggerDelay", "Delay", 0, 500, 0, " ms")
     slider(trigTab, "triggerCooldown", "Cooldown", 30, 1000, 0, " ms")
     slider(trigTab, "triggerRange", "Range", 50, 2000, 0, " studs")
-    trigTab:CreateLabel("Fires when a player is under your crosshair. With Visible Check off it ignores walls.")
 
     setTab:CreateSection("Config")
     setTab:CreateButton({ Name = "Save Config", Callback = safe("save", function()
@@ -714,24 +709,23 @@ local function buildPanel(Library)
         elseif typeof(Window.SetVisible) == "function" then Window:SetVisible(true)
         else warnf("no toggle API; use Insert") end
     end) })
-    setTab:CreateButton({ Name = "Unload Control Panel", Callback = safe("unload", function()
-        if _G.ControlPanel then _G.ControlPanel:Destroy() end
+    setTab:CreateButton({ Name = "Unload Plutana-Uni", Callback = safe("unload", function()
+        if _G.PlutanaUni then _G.PlutanaUni:Destroy() end
     end) })
-    setTab:CreateLabel("Insert: show / hide the window")
 
     notify("Loaded. Press Insert to toggle.")
     local cleanESP = setupESP()
     local cleanAim, silentOk = setupAim()
     if not silentOk then
-        silentTab:CreateLabel("Silent aim is unavailable here: executor lacks hookmetamethod / newcclosure.")
+        notify("Silent aim unavailable: executor lacks hookmetamethod / newcclosure")
     end
     return { Window = Window, Cleanup = function() pcall(cleanESP); pcall(cleanAim) end }
 end
 
-local function LoadControlPanel()
-    if _G.ControlPanel and typeof(_G.ControlPanel.Destroy) == "function" then
-        pcall(_G.ControlPanel.Destroy, _G.ControlPanel)
-        _G.ControlPanel = nil
+local function LoadPlutanaUni()
+    if _G.PlutanaUni and typeof(_G.PlutanaUni.Destroy) == "function" then
+        pcall(_G.PlutanaUni.Destroy, _G.PlutanaUni)
+        _G.PlutanaUni = nil
     end
 
     loadConfig()
@@ -752,14 +746,14 @@ local function LoadControlPanel()
         if self.Window and typeof(self.Window.Destroy) == "function" then
             pcall(self.Window.Destroy, self.Window)
         end
-        if _G.ControlPanel == self then _G.ControlPanel = nil end
+        if _G.PlutanaUni == self then _G.PlutanaUni = nil end
         log("unloaded")
     end
 
-    _G.ControlPanel = api
-    log("loaded, press Insert to open")
+    _G.PlutanaUni = api
+    log("ready, press Insert to open")
     return api
 end
 
-_G.LoadControlPanel = LoadControlPanel
-LoadControlPanel()
+_G.LoadPlutanaUni = LoadPlutanaUni
+LoadPlutanaUni()
