@@ -757,7 +757,7 @@ local function LoadControlPanel()
     end
 
     _G.ControlPanel = api
-    log("ready, press Insert to open")
+    log("loaded, press Insert to open")
     return api
 end
 
