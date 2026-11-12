@@ -5,31 +5,65 @@ local RunService       = game:GetService("RunService")
 local GuiService       = game:GetService("GuiService")
 
 local Library = {}
-Library.Version = "2.67"
+Library.Version = "2.2"
+
+local Themes = {
+	Dark = {
+		Background          = Color3.fromRGB(22, 22, 22),
+		BackgroundTop       = Color3.fromRGB(42, 42, 42),
+		Surface             = Color3.fromRGB(52, 52, 52),
+		SurfaceTransparency = 0,
+		SurfaceHover        = Color3.fromRGB(74, 74, 74),
+		SurfaceActive       = Color3.fromRGB(98, 98, 98),
+		Stroke              = Color3.fromRGB(100, 100, 100),
+		StrokeHover         = Color3.fromRGB(200, 200, 200),
+		Accent              = Color3.fromRGB(255, 255, 255),
+		Accent2             = Color3.fromRGB(175, 175, 175),
+		Success             = Color3.fromRGB(255, 255, 255),
+		Warning             = Color3.fromRGB(210, 210, 210),
+		Danger              = Color3.fromRGB(150, 150, 150),
+		Text                = Color3.fromRGB(255, 255, 255),
+		TextDim             = Color3.fromRGB(205, 205, 205),
+		Snow                = Color3.fromRGB(255, 255, 255),
+	},
+	Light = {
+		Background          = Color3.fromRGB(238, 238, 238),
+		BackgroundTop       = Color3.fromRGB(255, 255, 255),
+		Surface             = Color3.fromRGB(255, 255, 255),
+		SurfaceTransparency = 0,
+		SurfaceHover        = Color3.fromRGB(235, 235, 235),
+		SurfaceActive       = Color3.fromRGB(212, 212, 212),
+		Stroke              = Color3.fromRGB(195, 195, 195),
+		StrokeHover         = Color3.fromRGB(110, 110, 110),
+		Accent              = Color3.fromRGB(20, 20, 20),
+		Accent2             = Color3.fromRGB(100, 100, 100),
+		Success             = Color3.fromRGB(20, 20, 20),
+		Warning             = Color3.fromRGB(90, 90, 90),
+		Danger              = Color3.fromRGB(130, 130, 130),
+		Text                = Color3.fromRGB(20, 20, 20),
+		TextDim             = Color3.fromRGB(95, 95, 95),
+		Snow                = Color3.fromRGB(170, 170, 170),
+	},
+}
 
 local Theme = {
-	Background          = Color3.fromRGB(238, 238, 238),
-	BackgroundTop       = Color3.fromRGB(255, 255, 255),
-	Surface             = Color3.fromRGB(255, 255, 255),
-	SurfaceTransparency = 0,
-	SurfaceHover        = Color3.fromRGB(235, 235, 235),
-	SurfaceActive       = Color3.fromRGB(212, 212, 212),
-	Stroke              = Color3.fromRGB(195, 195, 195),
-	StrokeHover         = Color3.fromRGB(110, 110, 110),
-	Accent              = Color3.fromRGB(20, 20, 20),
-	Accent2             = Color3.fromRGB(100, 100, 100),
-	Success             = Color3.fromRGB(20, 20, 20),
-	Warning             = Color3.fromRGB(90, 90, 90),
-	Danger              = Color3.fromRGB(130, 130, 130),
-	Text                = Color3.fromRGB(20, 20, 20),
-	TextDim             = Color3.fromRGB(95, 95, 95),
-	Font                = Enum.Font.GothamMedium,
-	FontBold            = Enum.Font.GothamBold,
-	Corner              = UDim.new(0, 8),
+	Font     = Enum.Font.GothamMedium,
+	FontBold = Enum.Font.GothamBold,
+	Corner   = UDim.new(0, 8),
 }
+
+local currentThemeName = "Dark"
+for key, value in pairs(Themes.Dark) do
+	Theme[key] = value
+end
+
 Library.Theme = Theme
+Library.Themes = Themes
+Library.ThemeName = currentThemeName
 
 local connections = {}
+local themed = {}
+local refreshers = {}
 
 local function connect(signal, callback)
 	local connection = signal:Connect(callback)
@@ -37,16 +71,30 @@ local function connect(signal, callback)
 	return connection
 end
 
+local function T(key)
+	return { __key = key }
+end
+
+local function TF(resolver)
+	return { __fn = resolver }
+end
+
 local function new(className, properties, children)
 	local instance = Instance.new(className)
 	local parent = nil
 
 	if properties then
-		for key, value in pairs(properties) do
-			if key == "Parent" then
+		for property, value in pairs(properties) do
+			if property == "Parent" then
 				parent = value
+			elseif type(value) == "table" and (value.__key or value.__fn) then
+				local resolver = value.__fn or function()
+					return Theme[value.__key]
+				end
+				instance[property] = resolver()
+				table.insert(themed, { Instance = instance, Property = property, Resolve = resolver })
 			else
-				instance[key] = value
+				instance[property] = value
 			end
 		end
 	end
@@ -62,6 +110,11 @@ local function new(className, properties, children)
 	end
 
 	return instance
+end
+
+local function onTheme(callback)
+	table.insert(refreshers, callback)
+	return callback
 end
 
 local function tween(instance, duration, properties, style, direction)
@@ -82,8 +135,17 @@ local function applyCorner(instance, radius)
 end
 
 local function applyStroke(instance, color, thickness)
+	local resolved
+	if color == nil then
+		resolved = T("Stroke")
+	elseif type(color) == "string" then
+		resolved = T(color)
+	else
+		resolved = color
+	end
+
 	return new("UIStroke", {
-		Color = color or Theme.Stroke,
+		Color = resolved,
 		Thickness = thickness or 1,
 		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 		Parent = instance,
@@ -175,6 +237,53 @@ end
 root:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateScale)
 updateScale()
 
+local function refreshTheme(animate)
+	local alive = {}
+
+	for _, entry in ipairs(themed) do
+		local instance = entry.Instance
+		if screenGui and instance:IsDescendantOf(screenGui) then
+			table.insert(alive, entry)
+			local value = entry.Resolve()
+			if animate and typeof(value) == "Color3" then
+				tween(instance, 0.25, { [entry.Property] = value })
+			else
+				instance[entry.Property] = value
+			end
+		end
+	end
+
+	themed = alive
+
+	for _, callback in ipairs(refreshers) do
+		task.spawn(callback)
+	end
+end
+
+function Library:SetTheme(name)
+	local source = Themes[name]
+	if not source then
+		return false
+	end
+
+	for key, value in pairs(source) do
+		Theme[key] = value
+	end
+
+	currentThemeName = name
+	Library.ThemeName = name
+	refreshTheme(true)
+	return true
+end
+
+function Library:GetTheme()
+	return currentThemeName
+end
+
+function Library:ToggleTheme()
+	return Library:SetTheme(currentThemeName == "Dark" and "Light" or "Dark")
+end
+
 local notifyHolder = new("Frame", {
 	Name = "Notifications",
 	AnchorPoint = Vector2.new(1, 1),
@@ -226,12 +335,12 @@ function Library:Notify(config)
 		Name = "Toast",
 		Size = UDim2.new(1, 0, 0, 66),
 		Position = UDim2.new(0, 330, 0, 0),
-		BackgroundColor3 = Theme.Surface,
+		BackgroundColor3 = T("Surface"),
 		BorderSizePixel = 0,
 		Parent = holder,
 	})
 	applyCorner(toast, UDim.new(0, 10))
-	applyStroke(toast, Theme.Stroke)
+	applyStroke(toast, "Stroke")
 
 	local bar = new("Frame", {
 		Size = UDim2.new(0, 3, 1, -20),
@@ -247,7 +356,7 @@ function Library:Notify(config)
 		Position = UDim2.new(0, 22, 0, 9),
 		BackgroundTransparency = 1,
 		Text = title,
-		TextColor3 = Theme.Text,
+		TextColor3 = T("Text"),
 		TextSize = 13,
 		Font = Theme.FontBold,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -260,7 +369,7 @@ function Library:Notify(config)
 		Position = UDim2.new(0, 22, 0, 27),
 		BackgroundTransparency = 1,
 		Text = content,
-		TextColor3 = Theme.TextDim,
+		TextColor3 = T("TextDim"),
 		TextSize = 12,
 		Font = Theme.Font,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -310,7 +419,7 @@ local function createSnow(parent, count, height, isActive)
 		local size = rng:NextInteger(2, 5)
 		local frame = new("Frame", {
 			Size = UDim2.fromOffset(size, size),
-			BackgroundColor3 = Color3.fromRGB(170, 170, 170),
+			BackgroundColor3 = T("Snow"),
 			BackgroundTransparency = rng:NextNumber(0.25, 0.75),
 			BorderSizePixel = 0,
 			ZIndex = 1,
@@ -373,8 +482,8 @@ local function createRow(tab, name, height)
 	local row = new("Frame", {
 		Name = name,
 		Size = UDim2.new(1, 0, 0, height),
-		BackgroundColor3 = Theme.Surface,
-		BackgroundTransparency = Theme.SurfaceTransparency,
+		BackgroundColor3 = T("Surface"),
+		BackgroundTransparency = T("SurfaceTransparency"),
 		BorderSizePixel = 0,
 		LayoutOrder = tab:_nextOrder(),
 		Parent = tab.Page,
@@ -390,7 +499,7 @@ local function addNameLabel(parent, text, rightReserve)
 		Position = UDim2.new(0, 14, 0, 0),
 		BackgroundTransparency = 1,
 		Text = text,
-		TextColor3 = Theme.Text,
+		TextColor3 = T("Text"),
 		TextSize = 13,
 		Font = Theme.Font,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -477,7 +586,7 @@ function TabMethods:CreateSection(text)
 		Position = UDim2.new(0, 4, 0, 6),
 		BackgroundTransparency = 1,
 		Text = string.upper(tostring(text or "Section")),
-		TextColor3 = Theme.Accent,
+		TextColor3 = T("Accent"),
 		TextSize = 11,
 		Font = Theme.FontBold,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -487,7 +596,7 @@ function TabMethods:CreateSection(text)
 	local line = new("Frame", {
 		Size = UDim2.new(1, -4, 0, 1),
 		Position = UDim2.new(0, 2, 1, -3),
-		BackgroundColor3 = Theme.Accent,
+		BackgroundColor3 = T("Accent"),
 		BorderSizePixel = 0,
 		Parent = holder,
 	})
@@ -509,7 +618,7 @@ function TabMethods:CreateLabel(text)
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
 		Text = tostring(text or ""),
-		TextColor3 = Theme.TextDim,
+		TextColor3 = T("TextDim"),
 		TextSize = 12,
 		Font = Theme.Font,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -533,8 +642,8 @@ function TabMethods:CreateParagraph(config)
 		Name = "Paragraph",
 		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Surface,
-		BackgroundTransparency = Theme.SurfaceTransparency,
+		BackgroundColor3 = T("Surface"),
+		BackgroundTransparency = T("SurfaceTransparency"),
 		BorderSizePixel = 0,
 		LayoutOrder = self:_nextOrder(),
 		Parent = self.Page,
@@ -552,7 +661,7 @@ function TabMethods:CreateParagraph(config)
 		Size = UDim2.new(1, 0, 0, 16),
 		BackgroundTransparency = 1,
 		Text = tostring(config.Title or "Title"),
-		TextColor3 = Theme.Text,
+		TextColor3 = T("Text"),
 		TextSize = 13,
 		Font = Theme.FontBold,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -565,7 +674,7 @@ function TabMethods:CreateParagraph(config)
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
 		Text = tostring(config.Content or ""),
-		TextColor3 = Theme.TextDim,
+		TextColor3 = T("TextDim"),
 		TextSize = 12,
 		Font = Theme.Font,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -594,8 +703,8 @@ function TabMethods:CreateButton(config)
 	local button = new("TextButton", {
 		Name = name,
 		Size = UDim2.new(1, 0, 0, 38),
-		BackgroundColor3 = Theme.Surface,
-		BackgroundTransparency = Theme.SurfaceTransparency,
+		BackgroundColor3 = T("Surface"),
+		BackgroundTransparency = T("SurfaceTransparency"),
 		BorderSizePixel = 0,
 		Text = "",
 		AutoButtonColor = false,
@@ -610,7 +719,7 @@ function TabMethods:CreateButton(config)
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		Text = name,
-		TextColor3 = Theme.Text,
+		TextColor3 = T("Text"),
 		TextSize = 13,
 		Font = Theme.Font,
 		Parent = button,
@@ -620,7 +729,7 @@ function TabMethods:CreateButton(config)
 		Size = UDim2.new(0, 3, 0, 0),
 		Position = UDim2.new(0, 0, 0.5, 0),
 		AnchorPoint = Vector2.new(0, 0.5),
-		BackgroundColor3 = Theme.Accent,
+		BackgroundColor3 = T("Accent"),
 		BorderSizePixel = 0,
 		Parent = button,
 	})
@@ -661,6 +770,8 @@ function TabMethods:CreateToggle(config)
 	local name = config.Name or "Toggle"
 	local callback = config.Callback
 
+	local toggle = { Value = false }
+
 	local row, stroke = createRow(self, name, 40)
 	addNameLabel(row, name, 70)
 
@@ -669,19 +780,25 @@ function TabMethods:CreateToggle(config)
 		Size = UDim2.fromOffset(42, 22),
 		Position = UDim2.new(1, -14, 0.5, 0),
 		AnchorPoint = Vector2.new(1, 0.5),
-		BackgroundColor3 = Theme.SurfaceActive,
+		BackgroundColor3 = TF(function()
+			return toggle.Value and Theme.Accent or Theme.SurfaceActive
+		end),
 		BorderSizePixel = 0,
 		Parent = row,
 	})
 	applyCorner(switch, UDim.new(1, 0))
-	local switchStroke = applyStroke(switch, Theme.Stroke)
+	local switchStroke = applyStroke(switch, TF(function()
+		return toggle.Value and Theme.Accent or Theme.Stroke
+	end))
 
 	local knob = new("Frame", {
 		Name = "Knob",
 		Size = UDim2.fromOffset(16, 16),
 		Position = UDim2.new(0, 3, 0.5, 0),
 		AnchorPoint = Vector2.new(0, 0.5),
-		BackgroundColor3 = Theme.Text,
+		BackgroundColor3 = TF(function()
+			return toggle.Value and Theme.Background or Theme.Text
+		end),
 		BorderSizePixel = 0,
 		Parent = switch,
 	})
@@ -695,8 +812,6 @@ function TabMethods:CreateToggle(config)
 		Parent = row,
 	})
 	bindHover(clickArea, row, stroke)
-
-	local toggle = { Value = false }
 
 	local function setValue(value, fireCallback)
 		value = value and true or false
@@ -750,7 +865,7 @@ function TabMethods:CreateSlider(config)
 		Position = UDim2.new(0, 14, 0, 9),
 		BackgroundTransparency = 1,
 		Text = name,
-		TextColor3 = Theme.Text,
+		TextColor3 = T("Text"),
 		TextSize = 13,
 		Font = Theme.Font,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -763,7 +878,7 @@ function TabMethods:CreateSlider(config)
 		Position = UDim2.new(1, -114, 0, 9),
 		BackgroundTransparency = 1,
 		Text = "",
-		TextColor3 = Theme.Accent,
+		TextColor3 = T("Accent"),
 		TextSize = 12,
 		Font = Theme.FontBold,
 		TextXAlignment = Enum.TextXAlignment.Right,
@@ -774,7 +889,7 @@ function TabMethods:CreateSlider(config)
 		Name = "Track",
 		Size = UDim2.new(1, -28, 0, 6),
 		Position = UDim2.new(0, 14, 0, 40),
-		BackgroundColor3 = Theme.SurfaceActive,
+		BackgroundColor3 = T("SurfaceActive"),
 		BorderSizePixel = 0,
 		Parent = row,
 	})
@@ -789,7 +904,9 @@ function TabMethods:CreateSlider(config)
 	})
 	applyCorner(fill, UDim.new(1, 0))
 	new("UIGradient", {
-		Color = ColorSequence.new(Theme.Accent, Theme.Accent2),
+		Color = TF(function()
+			return ColorSequence.new(Theme.Accent, Theme.Accent2)
+		end),
 		Parent = fill,
 	})
 
@@ -798,13 +915,13 @@ function TabMethods:CreateSlider(config)
 		Size = UDim2.fromOffset(12, 12),
 		Position = UDim2.new(0, 0, 0.5, 0),
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		BackgroundColor3 = Theme.Surface,
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		BorderSizePixel = 0,
 		ZIndex = 2,
 		Parent = track,
 	})
 	applyCorner(knob, UDim.new(1, 0))
-	local knobStroke = applyStroke(knob, Theme.Accent, 2)
+	local knobStroke = applyStroke(knob, "Accent", 2)
 
 	local hitbox = new("TextButton", {
 		Size = UDim2.new(1, -28, 0, 26),
@@ -922,22 +1039,24 @@ function TabMethods:CreateDropdown(config)
 	local header = new("TextButton", {
 		Name = "Header",
 		Size = UDim2.new(1, 0, 0, HEADER_HEIGHT),
-		BackgroundColor3 = Theme.Surface,
-		BackgroundTransparency = Theme.SurfaceTransparency,
+		BackgroundColor3 = T("Surface"),
+		BackgroundTransparency = T("SurfaceTransparency"),
 		BorderSizePixel = 0,
 		Text = "",
 		AutoButtonColor = false,
 		Parent = container,
 	})
 	applyCorner(header)
-	local headerStroke = applyStroke(header)
+	local headerStroke = applyStroke(header, TF(function()
+		return isOpen and Theme.Accent or Theme.Stroke
+	end))
 
 	new("TextLabel", {
 		Size = UDim2.new(0.45, -14, 1, 0),
 		Position = UDim2.new(0, 14, 0, 0),
 		BackgroundTransparency = 1,
 		Text = name,
-		TextColor3 = Theme.Text,
+		TextColor3 = T("Text"),
 		TextSize = 13,
 		Font = Theme.Font,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -973,7 +1092,9 @@ function TabMethods:CreateDropdown(config)
 			Position = UDim2.fromOffset(x, 4),
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Rotation = rotation,
-			BackgroundColor3 = Theme.TextDim,
+			BackgroundColor3 = TF(function()
+				return isOpen and Theme.Accent or Theme.TextDim
+			end),
 			BorderSizePixel = 0,
 			Parent = chevron,
 		})
@@ -988,12 +1109,12 @@ function TabMethods:CreateDropdown(config)
 		Name = "List",
 		Size = UDim2.new(1, 0, 0, 0),
 		Position = UDim2.new(0, 0, 0, HEADER_HEIGHT + 4),
-		BackgroundColor3 = Theme.Surface,
+		BackgroundColor3 = T("Surface"),
 		BorderSizePixel = 0,
 		CanvasSize = UDim2.new(0, 0, 0, 0),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollBarThickness = 3,
-		ScrollBarImageColor3 = Theme.StrokeHover,
+		ScrollBarImageColor3 = T("StrokeHover"),
 		ScrollBarImageTransparency = 0.3,
 		ClipsDescendants = true,
 		Visible = false,
@@ -1092,6 +1213,12 @@ function TabMethods:CreateDropdown(config)
 		refreshHighlights()
 	end
 
+	onTheme(function()
+		if valueLabel.Parent then
+			updateDisplay()
+		end
+	end)
+
 	local function fire()
 		if callback then
 			task.spawn(callback, dropdown.Value)
@@ -1154,7 +1281,7 @@ function TabMethods:CreateDropdown(config)
 				Size = UDim2.fromOffset(6, 6),
 				Position = UDim2.new(1, -14, 0.5, 0),
 				AnchorPoint = Vector2.new(0.5, 0.5),
-				BackgroundColor3 = Theme.Accent,
+				BackgroundColor3 = T("Accent"),
 				BorderSizePixel = 0,
 				Visible = false,
 				Parent = optionButton,
@@ -1275,13 +1402,13 @@ function TabMethods:CreateTextbox(config)
 		Size = UDim2.fromOffset(150, 26),
 		Position = UDim2.new(1, -14, 0.5, 0),
 		AnchorPoint = Vector2.new(1, 0.5),
-		BackgroundColor3 = Theme.SurfaceActive,
+		BackgroundColor3 = T("SurfaceActive"),
 		BackgroundTransparency = 0.2,
 		BorderSizePixel = 0,
 		Parent = row,
 	})
 	applyCorner(boxFrame, UDim.new(0, 6))
-	local boxStroke = applyStroke(boxFrame, Theme.Stroke)
+	local boxStroke = applyStroke(boxFrame, "Stroke")
 
 	local box = new("TextBox", {
 		Size = UDim2.new(1, -16, 1, 0),
@@ -1289,8 +1416,8 @@ function TabMethods:CreateTextbox(config)
 		BackgroundTransparency = 1,
 		Text = tostring(config.Default or ""),
 		PlaceholderText = config.Placeholder or "Type here...",
-		PlaceholderColor3 = Theme.TextDim,
-		TextColor3 = Theme.Text,
+		PlaceholderColor3 = T("TextDim"),
+		TextColor3 = T("Text"),
 		TextSize = 12,
 		Font = Theme.Font,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -1328,6 +1455,9 @@ function TabMethods:CreateKeybind(config)
 	local callback = config.Callback
 	local pressed  = config.Pressed
 
+	local keybind = { Value = config.Default }
+	local listening = false
+
 	local row, stroke = createRow(self, name, 40)
 	addNameLabel(row, name, 120)
 
@@ -1335,7 +1465,7 @@ function TabMethods:CreateKeybind(config)
 		Size = UDim2.fromOffset(86, 26),
 		Position = UDim2.new(1, -14, 0.5, 0),
 		AnchorPoint = Vector2.new(1, 0.5),
-		BackgroundColor3 = Theme.SurfaceActive,
+		BackgroundColor3 = T("SurfaceActive"),
 		BackgroundTransparency = 0.2,
 		BorderSizePixel = 0,
 		Text = "",
@@ -1343,22 +1473,21 @@ function TabMethods:CreateKeybind(config)
 		Parent = row,
 	})
 	applyCorner(keyButton, UDim.new(0, 6))
-	local keyStroke = applyStroke(keyButton, Theme.Stroke)
+	local keyStroke = applyStroke(keyButton, TF(function()
+		return listening and Theme.Accent or Theme.Stroke
+	end))
 
 	local keyLabel = new("TextLabel", {
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		Text = "None",
-		TextColor3 = Theme.Text,
+		TextColor3 = T("Text"),
 		TextSize = 12,
 		Font = Theme.FontBold,
 		Parent = keyButton,
 	})
 
 	bindHover(row, row, stroke)
-
-	local keybind = { Value = config.Default }
-	local listening = false
 
 	local function render()
 		keyLabel.Text = keybind.Value and keybind.Value.Name or "None"
@@ -1440,15 +1569,17 @@ function TabMethods:CreateColorPicker(config)
 	local header = new("TextButton", {
 		Name = "Header",
 		Size = UDim2.new(1, 0, 0, HEADER_HEIGHT),
-		BackgroundColor3 = Theme.Surface,
-		BackgroundTransparency = Theme.SurfaceTransparency,
+		BackgroundColor3 = T("Surface"),
+		BackgroundTransparency = T("SurfaceTransparency"),
 		BorderSizePixel = 0,
 		Text = "",
 		AutoButtonColor = false,
 		Parent = container,
 	})
 	applyCorner(header)
-	local headerStroke = applyStroke(header)
+	local headerStroke = applyStroke(header, TF(function()
+		return isOpen and Theme.Accent or Theme.Stroke
+	end))
 	addNameLabel(header, name, 80)
 
 	local swatch = new("Frame", {
@@ -1460,13 +1591,13 @@ function TabMethods:CreateColorPicker(config)
 		Parent = header,
 	})
 	applyCorner(swatch, UDim.new(0, 6))
-	applyStroke(swatch, Theme.StrokeHover)
+	applyStroke(swatch, "StrokeHover")
 
 	local panel = new("Frame", {
 		Name = "Panel",
 		Size = UDim2.new(1, 0, 0, 0),
 		Position = UDim2.new(0, 0, 0, HEADER_HEIGHT + 4),
-		BackgroundColor3 = Theme.Surface,
+		BackgroundColor3 = T("Surface"),
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
 		Visible = false,
@@ -1563,13 +1694,13 @@ function TabMethods:CreateColorPicker(config)
 	local hexFrame = new("Frame", {
 		Size = UDim2.new(1, -20, 0, 26),
 		Position = UDim2.new(0, 10, 0, 118),
-		BackgroundColor3 = Theme.SurfaceActive,
+		BackgroundColor3 = T("SurfaceActive"),
 		BackgroundTransparency = 0.2,
 		BorderSizePixel = 0,
 		Parent = panel,
 	})
 	applyCorner(hexFrame, UDim.new(0, 6))
-	local hexStroke = applyStroke(hexFrame, Theme.Stroke)
+	local hexStroke = applyStroke(hexFrame, "Stroke")
 
 	local hexBox = new("TextBox", {
 		Size = UDim2.new(1, -16, 1, 0),
@@ -1577,8 +1708,8 @@ function TabMethods:CreateColorPicker(config)
 		BackgroundTransparency = 1,
 		Text = "",
 		PlaceholderText = "#RRGGBB",
-		PlaceholderColor3 = Theme.TextDim,
-		TextColor3 = Theme.Text,
+		PlaceholderColor3 = T("TextDim"),
+		TextColor3 = T("Text"),
 		TextSize = 12,
 		Font = Theme.FontBold,
 		ClearTextOnFocus = false,
@@ -1805,6 +1936,8 @@ end
 function WindowMethods:CreateTab(name)
 	name = tostring(name or "Tab")
 	local index = #self.Tabs + 1
+	local window = self
+	local tab = nil
 
 	local button = new("TextButton", {
 		Name = name .. "TabButton",
@@ -1822,7 +1955,12 @@ function WindowMethods:CreateTab(name)
 		Position = UDim2.new(0, 18, 0, 0),
 		BackgroundTransparency = 1,
 		Text = name,
-		TextColor3 = Theme.TextDim,
+		TextColor3 = TF(function()
+			if tab ~= nil and window.ActiveTab == tab then
+				return Theme.Text
+			end
+			return Theme.TextDim
+		end),
 		TextSize = 13,
 		Font = Theme.Font,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -1847,7 +1985,7 @@ function WindowMethods:CreateTab(name)
 		CanvasSize = UDim2.new(0, 0, 0, 0),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollBarThickness = 3,
-		ScrollBarImageColor3 = Theme.StrokeHover,
+		ScrollBarImageColor3 = T("StrokeHover"),
 		ScrollBarImageTransparency = 0.3,
 		Parent = holder,
 	})
@@ -1858,7 +1996,7 @@ function WindowMethods:CreateTab(name)
 	})
 	applyPadding(page, 2, 8, 8, 2)
 
-	local tab = setmetatable({
+	tab = setmetatable({
 		Window = self,
 		Name = name,
 		Index = index,
@@ -1953,6 +2091,18 @@ function WindowMethods:SetSnow(enabled)
 	self.Snow.Visible = self.SnowEnabled and not self.Minimized
 end
 
+function WindowMethods:SetTheme(name)
+	return Library:SetTheme(name)
+end
+
+function WindowMethods:ToggleTheme()
+	return Library:ToggleTheme()
+end
+
+function WindowMethods:GetTheme()
+	return Library:GetTheme()
+end
+
 function WindowMethods:Notify(config)
 	Library:Notify(config)
 end
@@ -1969,6 +2119,10 @@ function Library:CreateWindow(config)
 	local fullHeight = windowSize.Y.Offset > 0 and windowSize.Y.Offset or 460
 	local snowCount  = tonumber(config.SnowCount) or 45
 
+	if config.Theme and Themes[config.Theme] and config.Theme ~= currentThemeName then
+		Library:SetTheme(config.Theme)
+	end
+
 	local frame = new("CanvasGroup", {
 		Name = "Window",
 		Size = windowSize,
@@ -1982,7 +2136,9 @@ function Library:CreateWindow(config)
 	})
 	applyCorner(frame, UDim.new(0, 14))
 	new("UIGradient", {
-		Color = ColorSequence.new(Theme.BackgroundTop, Theme.Background),
+		Color = TF(function()
+			return ColorSequence.new(Theme.BackgroundTop, Theme.Background)
+		end),
 		Rotation = 90,
 		Parent = frame,
 	})
@@ -2017,12 +2173,14 @@ function Library:CreateWindow(config)
 	applyCorner(borderOverlay, UDim.new(0, 12))
 	local borderStroke = applyStroke(borderOverlay, Color3.new(1, 1, 1), 1.5)
 	local borderGradient = new("UIGradient", {
-		Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0,    Theme.Stroke),
-			ColorSequenceKeypoint.new(0.35, Theme.Accent),
-			ColorSequenceKeypoint.new(0.65, Theme.Accent2),
-			ColorSequenceKeypoint.new(1,    Theme.Stroke),
-		}),
+		Color = TF(function()
+			return ColorSequence.new({
+				ColorSequenceKeypoint.new(0,    Theme.Stroke),
+				ColorSequenceKeypoint.new(0.35, Theme.Accent),
+				ColorSequenceKeypoint.new(0.65, Theme.Accent2),
+				ColorSequenceKeypoint.new(1,    Theme.Stroke),
+			})
+		end),
 		Parent = borderStroke,
 	})
 	TweenService:Create(
@@ -2050,7 +2208,9 @@ function Library:CreateWindow(config)
 	})
 	applyCorner(logo, UDim.new(0, 4))
 	local logoGradient = new("UIGradient", {
-		Color = ColorSequence.new(Theme.Accent, Theme.Accent2),
+		Color = TF(function()
+			return ColorSequence.new(Theme.Accent, Theme.Accent2)
+		end),
 		Parent = logo,
 	})
 	TweenService:Create(
@@ -2064,7 +2224,7 @@ function Library:CreateWindow(config)
 		Position = UDim2.new(0, 44, 0, 0),
 		BackgroundTransparency = 1,
 		Text = title,
-		TextColor3 = Theme.Text,
+		TextColor3 = T("Text"),
 		TextSize = 15,
 		Font = Theme.FontBold,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -2077,7 +2237,7 @@ function Library:CreateWindow(config)
 			Position = UDim2.new(0, 160, 0, 1),
 			BackgroundTransparency = 1,
 			Text = tostring(subtitle),
-			TextColor3 = Theme.TextDim,
+			TextColor3 = T("TextDim"),
 			TextSize = 12,
 			Font = Theme.Font,
 			TextXAlignment = Enum.TextXAlignment.Left,
@@ -2085,12 +2245,12 @@ function Library:CreateWindow(config)
 		})
 	end
 
-	local function windowButton(offsetX, hoverColor)
+	local function windowButton(offsetX, hoverKey)
 		local b = new("TextButton", {
 			Size = UDim2.fromOffset(26, 26),
 			Position = UDim2.new(1, offsetX, 0.5, 0),
 			AnchorPoint = Vector2.new(0, 0.5),
-			BackgroundColor3 = Theme.Surface,
+			BackgroundColor3 = T("Surface"),
 			BackgroundTransparency = 0.2,
 			BorderSizePixel = 0,
 			Text = "",
@@ -2105,7 +2265,7 @@ function Library:CreateWindow(config)
 				Position = UDim2.fromScale(0.5, 0.5),
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Rotation = rotation,
-				BackgroundColor3 = Theme.TextDim,
+				BackgroundColor3 = T("TextDim"),
 				BorderSizePixel = 0,
 				Parent = b,
 			})
@@ -2115,7 +2275,7 @@ function Library:CreateWindow(config)
 		b.MouseEnter:Connect(function()
 			tween(b, 0.15, { BackgroundColor3 = Theme.SurfaceHover })
 			for _, x in ipairs(bars) do
-				tween(x, 0.15, { BackgroundColor3 = hoverColor })
+				tween(x, 0.15, { BackgroundColor3 = Theme[hoverKey] })
 			end
 		end)
 		b.MouseLeave:Connect(function()
@@ -2128,12 +2288,72 @@ function Library:CreateWindow(config)
 		return b, bar, bars
 	end
 
-	local minimizeButton, minimizeBar, minimizeBars = windowButton(-68, Theme.Accent)
+	local minimizeButton, minimizeBar, minimizeBars = windowButton(-68, "Accent")
 	table.insert(minimizeBars, minimizeBar(0))
 
-	local closeButton, closeBar, closeBars = windowButton(-36, Theme.Accent)
+	local closeButton, closeBar, closeBars = windowButton(-36, "Accent")
 	table.insert(closeBars, closeBar(45))
 	table.insert(closeBars, closeBar(-45))
+
+	local themeButton = new("TextButton", {
+		Name = "ThemeToggle",
+		Size = UDim2.fromOffset(40, 22),
+		Position = UDim2.new(1, -118, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		BackgroundColor3 = T("SurfaceActive"),
+		BorderSizePixel = 0,
+		Text = "",
+		AutoButtonColor = false,
+		Parent = titleBar,
+	})
+	applyCorner(themeButton, UDim.new(1, 0))
+	local themeStroke = applyStroke(themeButton, "Stroke")
+
+	local themeKnob = new("Frame", {
+		Name = "Knob",
+		Size = UDim2.fromOffset(16, 16),
+		Position = UDim2.new(0, 3, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		BackgroundColor3 = T("Accent"),
+		BorderSizePixel = 0,
+		Parent = themeButton,
+	})
+	applyCorner(themeKnob, UDim.new(1, 0))
+
+	local moonCut = new("Frame", {
+		Name = "MoonCut",
+		Size = UDim2.fromOffset(10, 10),
+		Position = UDim2.fromOffset(7, 0),
+		BackgroundColor3 = T("SurfaceActive"),
+		BorderSizePixel = 0,
+		Visible = false,
+		Parent = themeKnob,
+	})
+	applyCorner(moonCut, UDim.new(1, 0))
+
+	local function renderThemeToggle()
+		if not themeKnob.Parent then
+			return
+		end
+		local dark = currentThemeName == "Dark"
+		moonCut.Visible = dark
+		tween(themeKnob, 0.28, {
+			Position = dark and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0),
+		}, Enum.EasingStyle.Back)
+	end
+
+	onTheme(renderThemeToggle)
+	renderThemeToggle()
+
+	themeButton.MouseEnter:Connect(function()
+		tween(themeStroke, 0.15, { Color = Theme.StrokeHover })
+	end)
+	themeButton.MouseLeave:Connect(function()
+		tween(themeStroke, 0.2, { Color = Theme.Stroke })
+	end)
+	themeButton.MouseButton1Click:Connect(function()
+		Library:ToggleTheme()
+	end)
 
 	local line = new("Frame", {
 		Name = "TitleLine",
@@ -2146,11 +2366,13 @@ function Library:CreateWindow(config)
 	})
 	applyCorner(line, UDim.new(1, 0))
 	local lineGradient = new("UIGradient", {
-		Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0,   Theme.Stroke),
-			ColorSequenceKeypoint.new(0.5, Theme.Accent),
-			ColorSequenceKeypoint.new(1,   Theme.Accent2),
-		}),
+		Color = TF(function()
+			return ColorSequence.new({
+				ColorSequenceKeypoint.new(0,   Theme.Stroke),
+				ColorSequenceKeypoint.new(0.5, Theme.Accent),
+				ColorSequenceKeypoint.new(1,   Theme.Accent2),
+			})
+		end),
 		Offset = Vector2.new(-0.6, 0),
 		Parent = line,
 	})
@@ -2173,8 +2395,8 @@ function Library:CreateWindow(config)
 	local tabBar = new("Frame", {
 		Name = "TabBar",
 		Size = UDim2.new(0, 152, 1, 0),
-		BackgroundColor3 = Theme.Surface,
-		BackgroundTransparency = Theme.SurfaceTransparency,
+		BackgroundColor3 = T("Surface"),
+		BackgroundTransparency = T("SurfaceTransparency"),
 		BorderSizePixel = 0,
 		Parent = body,
 	})
@@ -2184,14 +2406,14 @@ function Library:CreateWindow(config)
 	local highlight = new("Frame", {
 		Name = "Highlight",
 		Size = UDim2.new(1, -12, 0, TAB_HEIGHT),
-		BackgroundColor3 = Theme.SurfaceActive,
+		BackgroundColor3 = T("SurfaceActive"),
 		BorderSizePixel = 0,
 		Visible = false,
 		ZIndex = 1,
 		Parent = tabBar,
 	})
 	applyCorner(highlight, UDim.new(0, 8))
-	applyStroke(highlight, Theme.StrokeHover)
+	applyStroke(highlight, "StrokeHover")
 
 	local tabList = new("Frame", {
 		Name = "TabList",
@@ -2210,7 +2432,7 @@ function Library:CreateWindow(config)
 	local indicator = new("Frame", {
 		Name = "Indicator",
 		Size = UDim2.fromOffset(3, 16),
-		BackgroundColor3 = Theme.Accent,
+		BackgroundColor3 = T("Accent"),
 		BorderSizePixel = 0,
 		Visible = false,
 		ZIndex = 3,
@@ -2221,7 +2443,7 @@ function Library:CreateWindow(config)
 	local footer = new("Frame", {
 		Size = UDim2.new(1, -12, 0, 40),
 		Position = UDim2.new(0, 6, 1, -46),
-		BackgroundColor3 = Theme.SurfaceActive,
+		BackgroundColor3 = T("SurfaceActive"),
 		BackgroundTransparency = 0.35,
 		BorderSizePixel = 0,
 		ZIndex = 2,
@@ -2233,7 +2455,7 @@ function Library:CreateWindow(config)
 		Size = UDim2.fromOffset(8, 8),
 		Position = UDim2.new(0, 12, 0.5, 0),
 		AnchorPoint = Vector2.new(0, 0.5),
-		BackgroundColor3 = Theme.Success,
+		BackgroundColor3 = T("Success"),
 		BorderSizePixel = 0,
 		Parent = footer,
 	})
@@ -2250,7 +2472,7 @@ function Library:CreateWindow(config)
 		Position = UDim2.new(0, 28, 0, 0),
 		BackgroundTransparency = 1,
 		Text = localPlayer and localPlayer.DisplayName or "Player",
-		TextColor3 = Theme.Text,
+		TextColor3 = T("Text"),
 		TextSize = 12,
 		Font = Theme.Font,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -2331,10 +2553,10 @@ function Library:CreateWindow(config)
 			Size = UDim2.fromOffset(46, 46),
 			Position = UDim2.new(0, 16, 0.5, 0),
 			AnchorPoint = Vector2.new(0, 0.5),
-			BackgroundColor3 = Theme.Accent,
+			BackgroundColor3 = T("Accent"),
 			BorderSizePixel = 0,
 			Text = "UI",
-			TextColor3 = Theme.Background,
+			TextColor3 = T("Background"),
 			TextSize = 14,
 			Font = Theme.FontBold,
 			AutoButtonColor = false,
@@ -2343,7 +2565,9 @@ function Library:CreateWindow(config)
 		})
 		applyCorner(mobileButton, UDim.new(1, 0))
 		new("UIGradient", {
-			Color = ColorSequence.new(Theme.Accent, Theme.Accent2),
+			Color = TF(function()
+				return ColorSequence.new(Theme.Accent, Theme.Accent2)
+			end),
 			Rotation = 45,
 			Parent = mobileButton,
 		})
@@ -2361,6 +2585,8 @@ function Library:Destroy()
 		connection:Disconnect()
 	end
 	table.clear(connections)
+	table.clear(themed)
+	table.clear(refreshers)
 
 	if screenGui then
 		screenGui:Destroy()
