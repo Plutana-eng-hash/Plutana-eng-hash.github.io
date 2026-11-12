@@ -5,7 +5,7 @@ local RunService       = game:GetService("RunService")
 local GuiService       = game:GetService("GuiService")
 
 local Library = {}
-Library.Version = "2.1"
+Library.Version = "2.67"
 
 local Theme = {
 	Background          = Color3.fromRGB(238, 238, 238),
