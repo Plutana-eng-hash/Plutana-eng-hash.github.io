@@ -9,7 +9,7 @@ Library.Version = "2.2"
 
 local Themes = {
 	Dark = {
-		Background          = Color3.fromRGB(20, 20, 20),
+		Background          = Color3.fromRGB(0, 0, 0),
 		BackgroundTop       = Color3.fromRGB(40, 40, 40),
 		Surface             = Color3.fromRGB(48, 48, 48),
 		SurfaceTransparency = 0,
