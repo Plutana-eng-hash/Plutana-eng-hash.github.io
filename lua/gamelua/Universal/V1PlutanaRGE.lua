@@ -552,7 +552,7 @@ end
 local function buildPanel(Library)
     local Window = Library:CreateWindow({
         Title = "Control Panel", Size = UDim2.fromOffset(760, 540),
-        Theme = "Light", ToggleKey = Enum.KeyCode.RightShift,
+        Theme = "Light", ToggleKey = Enum.KeyCode.Insert,
     })
 
     local function notify(text)
@@ -712,14 +712,14 @@ local function buildPanel(Library)
     setTab:CreateButton({ Name = "Show / Hide Window", Callback = safe("toggle", function()
         if typeof(Window.Toggle) == "function" then Window:Toggle()
         elseif typeof(Window.SetVisible) == "function" then Window:SetVisible(true)
-        else warnf("no toggle API; use RightShift") end
+        else warnf("no toggle API; use Insert") end
     end) })
     setTab:CreateButton({ Name = "Unload Control Panel", Callback = safe("unload", function()
         if _G.ControlPanel then _G.ControlPanel:Destroy() end
     end) })
-    setTab:CreateLabel("RightShift: show / hide the window")
+    setTab:CreateLabel("Insert: show / hide the window")
 
-    notify("Loaded. Press RightShift to toggle.")
+    notify("Loaded. Press Insert to toggle.")
     local cleanESP = setupESP()
     local cleanAim, silentOk = setupAim()
     if not silentOk then
@@ -757,7 +757,7 @@ local function LoadControlPanel()
     end
 
     _G.ControlPanel = api
-    log("ready, press RightShift to open")
+    log("ready, press Insert to open")
     return api
 end
 
