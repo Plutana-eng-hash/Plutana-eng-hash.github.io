@@ -9,21 +9,21 @@ Library.Version = "2.2"
 
 local Themes = {
 	Dark = {
-		Background          = Color3.fromRGB(22, 22, 22),
-		BackgroundTop       = Color3.fromRGB(42, 42, 42),
-		Surface             = Color3.fromRGB(52, 52, 52),
+		Background          = Color3.fromRGB(20, 20, 20),
+		BackgroundTop       = Color3.fromRGB(40, 40, 40),
+		Surface             = Color3.fromRGB(48, 48, 48),
 		SurfaceTransparency = 0,
-		SurfaceHover        = Color3.fromRGB(74, 74, 74),
-		SurfaceActive       = Color3.fromRGB(98, 98, 98),
-		Stroke              = Color3.fromRGB(100, 100, 100),
-		StrokeHover         = Color3.fromRGB(200, 200, 200),
+		SurfaceHover        = Color3.fromRGB(70, 70, 70),
+		SurfaceActive       = Color3.fromRGB(96, 96, 96),
+		Stroke              = Color3.fromRGB(150, 150, 150),
+		StrokeHover         = Color3.fromRGB(255, 255, 255),
 		Accent              = Color3.fromRGB(255, 255, 255),
-		Accent2             = Color3.fromRGB(175, 175, 175),
+		Accent2             = Color3.fromRGB(190, 190, 190),
 		Success             = Color3.fromRGB(255, 255, 255),
-		Warning             = Color3.fromRGB(210, 210, 210),
-		Danger              = Color3.fromRGB(150, 150, 150),
+		Warning             = Color3.fromRGB(225, 225, 225),
+		Danger              = Color3.fromRGB(170, 170, 170),
 		Text                = Color3.fromRGB(255, 255, 255),
-		TextDim             = Color3.fromRGB(205, 205, 205),
+		TextDim             = Color3.fromRGB(225, 225, 225),
 		Snow                = Color3.fromRGB(255, 255, 255),
 	},
 	Light = {
@@ -33,7 +33,7 @@ local Themes = {
 		SurfaceTransparency = 0,
 		SurfaceHover        = Color3.fromRGB(235, 235, 235),
 		SurfaceActive       = Color3.fromRGB(212, 212, 212),
-		Stroke              = Color3.fromRGB(195, 195, 195),
+		Stroke              = Color3.fromRGB(165, 165, 165),
 		StrokeHover         = Color3.fromRGB(110, 110, 110),
 		Accent              = Color3.fromRGB(20, 20, 20),
 		Accent2             = Color3.fromRGB(100, 100, 100),
@@ -57,7 +57,10 @@ for key, value in pairs(Themes.Dark) do
 	Theme[key] = value
 end
 
-Library.Theme = Theme
+Library.Theme = setmetatable({}, {
+	__index = Theme,
+	__newindex = function() end,
+})
 Library.Themes = Themes
 Library.ThemeName = currentThemeName
 
@@ -146,7 +149,7 @@ local function applyStroke(instance, color, thickness)
 
 	return new("UIStroke", {
 		Color = resolved,
-		Thickness = thickness or 1,
+		Thickness = thickness or 1.5,
 		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 		Parent = instance,
 	})
@@ -1899,6 +1902,9 @@ function WindowMethods:SelectTab(tab)
 		tween(candidate.Label, 0.2, {
 			TextColor3 = (candidate == tab) and Theme.Text or Theme.TextDim,
 		})
+		tween(candidate.Stroke, 0.2, {
+			Color = (candidate == tab) and Theme.Accent or Theme.Stroke,
+		})
 	end
 
 	if previousTab then
@@ -1949,6 +1955,13 @@ function WindowMethods:CreateTab(name)
 		LayoutOrder = index,
 		Parent = self.TabList,
 	})
+	applyCorner(button, UDim.new(0, 8))
+	local buttonStroke = applyStroke(button, TF(function()
+		if tab ~= nil and window.ActiveTab == tab then
+			return Theme.Accent
+		end
+		return Theme.Stroke
+	end))
 
 	local label = new("TextLabel", {
 		Size = UDim2.new(1, -28, 1, 0),
@@ -2002,6 +2015,7 @@ function WindowMethods:CreateTab(name)
 		Index = index,
 		Button = button,
 		Label = label,
+		Stroke = buttonStroke,
 		Holder = holder,
 		Page = page,
 		ElementCount = 0,
@@ -2016,6 +2030,7 @@ function WindowMethods:CreateTab(name)
 	button.MouseEnter:Connect(function()
 		if self.ActiveTab ~= tab then
 			tween(label, 0.15, { TextColor3 = Theme.Text })
+			tween(buttonStroke, 0.15, { Color = Theme.StrokeHover })
 			tween(label, 0.2, { Position = UDim2.new(0, 22, 0, 0) })
 		end
 	end)
@@ -2023,6 +2038,7 @@ function WindowMethods:CreateTab(name)
 	button.MouseLeave:Connect(function()
 		if self.ActiveTab ~= tab then
 			tween(label, 0.15, { TextColor3 = Theme.TextDim })
+			tween(buttonStroke, 0.2, { Color = Theme.Stroke })
 		end
 		tween(label, 0.2, { Position = UDim2.new(0, 18, 0, 0) })
 	end)
@@ -2118,6 +2134,10 @@ function Library:CreateWindow(config)
 	local windowSize = config.Size or UDim2.fromOffset(660, 460)
 	local fullHeight = windowSize.Y.Offset > 0 and windowSize.Y.Offset or 460
 	local snowCount  = tonumber(config.SnowCount) or 45
+
+	for key, value in pairs(Themes[currentThemeName]) do
+		Theme[key] = value
+	end
 
 	if config.Theme and Themes[config.Theme] and config.Theme ~= currentThemeName then
 		Library:SetTheme(config.Theme)
