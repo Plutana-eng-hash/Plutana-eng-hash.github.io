@@ -5,77 +5,86 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Software Library</title>
 <style>
-:root{--bg:#fff;--ink:#000;--muted:#666;--line:#000;--soft:#e6e6e6;--tile:#f2f2f2}
-@media(prefers-color-scheme:dark){:root{--bg:#000;--ink:#fff;--muted:#999;--line:#fff;--soft:#2a2a2a;--tile:#151515}}
+:root{--bg:#fff;--ink:#000;--muted:#666;--soft:#e6e6e6;--tile:#f2f2f2}
+@media(prefers-color-scheme:dark){:root{--bg:#000;--ink:#fff;--muted:#999;--soft:#2a2a2a;--tile:#151515}}
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
 body.locked{overflow:hidden}
 h1,h2,h3,p,dl,dd,dt{margin:0}
 button,input{font:inherit;color:inherit}
 button{cursor:pointer}
-:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+button:focus,input:focus,a:focus{outline:3px solid var(--ink);outline-offset:2px}
 .hidden{display:none!important}
 .sr-only{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
 .wrap{max-width:78rem;margin:0 auto;padding:3rem 1.25rem}
-.head{display:flex;flex-wrap:wrap;gap:1.5rem;align-items:flex-end;justify-content:space-between;padding-bottom:1.5rem;border-bottom:3px solid var(--line)}
-.title{font-size:clamp(2.5rem,8vw,5rem);line-height:.95;font-weight:800;letter-spacing:-.045em}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;padding-bottom:1.5rem;border-bottom:3px solid var(--ink)}
+.head>*{margin-top:1rem}
+.title{font-size:3rem;line-height:.95;font-weight:800;letter-spacing:-.045em}
+@media(min-width:700px){.title{font-size:4.5rem}}
 .count{margin-top:.75rem;color:var(--muted);font-size:.9rem}
-.search input{width:min(100%,20rem);padding:.7rem .9rem;background:var(--bg);border:2px solid var(--line);border-radius:0}
+.search input{width:20rem;max-width:100%;padding:.7rem .9rem;background:var(--bg);border:2px solid var(--ink);border-radius:0}
 .search input::placeholder{color:var(--muted)}
-.grid{display:grid;gap:0;margin-top:2rem;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line)}
-.card{display:flex;flex-direction:column;gap:1rem;padding:1.25rem;text-align:left;background:var(--bg);border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0;transition:background .12s,color .12s}
-.card:hover,.card:focus-visible{background:var(--ink);color:var(--bg)}
-.card:hover .muted,.card:focus-visible .muted{color:inherit;opacity:.75}
-.card:hover .icon,.card:focus-visible .icon{border-color:var(--bg)}
-.top{display:flex;align-items:center;gap:.9rem}
+.grid{display:grid;margin-top:2rem;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));border-top:1px solid var(--ink);border-left:1px solid var(--ink)}
+.card{display:flex;flex-direction:column;padding:1.25rem;text-align:left;background:var(--bg);color:var(--ink);border:0;border-right:1px solid var(--ink);border-bottom:1px solid var(--ink);border-radius:0}
+.card:hover{background:var(--ink);color:var(--bg)}
+.card:focus{background:var(--ink);color:var(--bg);outline-offset:-4px;outline-color:var(--bg)}
+.card:hover .muted,.card:focus .muted{color:inherit;opacity:.75}
+.card:hover .icon,.card:focus .icon{border-color:var(--bg)}
+.top{display:flex;align-items:center}
+.top .icon{margin-right:.9rem}
 .names{min-width:0;flex:1}
 .name{font-size:1.05rem;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ver{font-size:.8rem;font-variant-numeric:tabular-nums}
+.ver{font-size:.8rem}
 .muted{color:var(--muted)}
-.desc{flex:1;font-size:.875rem;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden}
-.cta{font-size:.875rem;font-weight:700}
-.icon{display:flex;flex-shrink:0;align-items:center;justify-content:center;overflow:hidden;background:var(--tile);border:1px solid var(--line)}
+.desc{flex:1;margin-top:1rem;font-size:.875rem;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.cta{margin-top:1rem;font-size:.875rem;font-weight:700}
+.icon{display:flex;flex-shrink:0;align-items:center;justify-content:center;overflow:hidden;background:var(--tile);border:1px solid var(--ink)}
 .icon.md{width:3.25rem;height:3.25rem}
 .icon.lg{width:4.5rem;height:4.5rem}
-.icon img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.05)}
+.icon img{width:100%;height:100%;object-fit:cover;-webkit-filter:grayscale(1);filter:grayscale(1)}
 .initial{font-size:1.4rem;font-weight:800}
-.sk{background:linear-gradient(90deg,var(--soft) 25%,var(--tile) 50%,var(--soft) 75%);background-size:200% 100%;animation:sh 1.4s linear infinite}
-@keyframes sh{to{background-position:-200% 0}}
-.skc{padding:1.25rem;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:grid;gap:.6rem}
-.msg{margin-top:2rem;padding:3rem 1.5rem;text-align:center;border:2px dashed var(--line)}
+.sk{background:var(--soft)}
+.skc{padding:1.25rem;border-right:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+.skc .sk{margin-bottom:.6rem}
+.msg{margin-top:2rem;padding:3rem 1.5rem;text-align:center;border:2px dashed var(--ink)}
 .msg h2{font-size:1.1rem}
 .msg p{margin-top:.4rem;color:var(--muted);font-size:.9rem}
 .msg.err{text-align:left;border-style:solid;max-width:36rem}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.75rem 1.4rem;font-size:.9rem;font-weight:700;text-decoration:none;background:var(--bg);color:var(--ink);border:2px solid var(--line);border-radius:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:.75rem 1.4rem;font-size:.9rem;font-weight:700;text-decoration:none;background:var(--bg);color:var(--ink);border:2px solid var(--ink);border-radius:0}
 .btn:hover{background:var(--soft)}
 .btn.primary{background:var(--ink);color:var(--bg)}
-.btn.primary:hover{opacity:.85;background:var(--ink)}
+.btn.primary:hover{opacity:.85}
 .btn[aria-disabled=true]{opacity:.4;pointer-events:none}
 .msg .btn{margin-top:1.25rem}
-.modal{position:fixed;inset:0;z-index:50;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.7)}
+.modal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:50;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.7)}
 .modal.open{display:flex}
 @media(min-width:640px){.modal{align-items:center;padding:1.5rem}}
-.panel{display:flex;flex-direction:column;width:100%;max-width:34rem;max-height:92vh;background:var(--bg);border:3px solid var(--line)}
-.bar{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1.25rem;border-bottom:1px solid var(--line)}
+.panel{display:flex;flex-direction:column;width:100%;max-width:34rem;max-height:92vh;background:var(--bg);border:3px solid var(--ink)}
+.bar{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1.25rem;border-bottom:1px solid var(--ink)}
 .bar h2{font-size:.9rem}
 .x{padding:.4rem .7rem;font-size:1.4rem;line-height:1;background:none;border:0}
 .x:hover{background:var(--soft)}
-.body{overflow-y:auto;padding:1.25rem}
-.phead{display:flex;align-items:center;gap:1rem}
-.pname{font-size:1.4rem;font-weight:800;line-height:1.15;letter-spacing:-.02em;overflow-wrap:anywhere}
+.body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:1.25rem}
+.phead{display:flex;align-items:center}
+.phead .icon{margin-right:1rem}
+.pname{font-size:1.4rem;font-weight:800;line-height:1.15;letter-spacing:-.02em;word-wrap:break-word}
 .pdesc{margin-top:1rem;font-size:.9rem;color:var(--muted)}
-.meta{margin-top:1.25rem;border:1px solid var(--line);font-size:.875rem}
-.row{display:flex;gap:1rem;padding:.6rem 1rem}
+.meta{margin-top:1.25rem;border:1px solid var(--ink);font-size:.875rem}
+.row{display:flex;padding:.6rem 1rem}
 .row+.row{border-top:1px solid var(--soft)}
-.row dt{width:7.5rem;flex-shrink:0;color:var(--muted)}
-.row dd{min-width:0;font-weight:600;overflow-wrap:anywhere}
-.how{margin-top:1.25rem;padding:1rem;background:var(--tile);font-size:.85rem}
-.how strong{display:block;margin-bottom:.4rem}
-.how ol{margin:0;padding-left:1.2rem}
+.row dt{width:7.5rem;margin-right:1rem;flex-shrink:0;color:var(--muted)}
+.row dd{min-width:0;font-weight:600;word-wrap:break-word}
+.ip{margin-top:1.25rem;font-size:.85rem}
+.ip label{display:block;margin-bottom:.3rem;color:var(--muted)}
+.ip .fields{display:flex}
+.ip input{padding:.6rem .75rem;background:var(--bg);border:2px solid var(--ink);border-radius:0}
+.ip #ps4ip{flex:1;min-width:0;margin-right:.5rem}
+.ip #ps4port{width:5.5rem}
+.ip p{margin-top:.3rem;color:var(--muted);font-size:.8rem}
 .status{min-height:1.25rem;margin-top:1rem;font-size:.875rem;color:var(--muted)}
-.foot{display:flex;flex-direction:column-reverse;gap:.75rem;padding:1rem 1.25rem;border-top:1px solid var(--line)}
-@media(min-width:640px){.foot{flex-direction:row;justify-content:flex-end}}
-@media(prefers-reduced-motion:reduce){.sk{animation:none}.card{transition:none}}
+.foot{display:flex;flex-wrap:wrap;justify-content:flex-end;padding:.5rem 1.25rem 1rem;border-top:1px solid var(--ink)}
+.foot .btn{margin:.5rem 0 0 .6rem}
+@media(max-width:639px){.foot .btn{flex:1 1 100%;margin-left:0}.foot .primary{order:-1}}
 </style>
 </head>
 <body>
@@ -112,213 +121,262 @@ button{cursor:pointer}
       <div id="mhead" class="phead"></div>
       <p id="mdesc" class="pdesc"></p>
       <dl id="mmeta" class="meta"></dl>
-      <div class="how">
-        <strong>Installing on a PS4</strong>
-        <ol>
-          <li>Download the .pkg file to your computer.</li>
-          <li>Copy it to a USB drive, or send it with a package sender on your network.</li>
-          <li>Open the package installer on your console and select the file.</li>
-        </ol>
+      <div class="ip">
+        <label for="ps4ip">PS4 address and installer port</label>
+        <div class="fields">
+          <input id="ps4ip" type="text" value="127.0.0.1" autocomplete="off" autocapitalize="off">
+          <input id="ps4port" type="text" value="12800" inputmode="numeric" autocomplete="off" aria-label="Installer port">
+        </div>
+        <p>Use 127.0.0.1 when this page is open in the PS4 browser. Otherwise enter the PS4's IP address. Start the Remote Package Installer on the PS4 first.</p>
       </div>
       <p id="status" class="status" aria-live="polite"></p>
     </div>
     <div class="foot">
       <button id="copy" type="button" class="btn">Copy link</button>
-      <a id="dl" class="btn primary" href="#" target="_blank" rel="noopener noreferrer" download>Download</a>
+      <a id="dl" class="btn" href="#" target="_blank" rel="noopener noreferrer" download>Download</a>
+      <button id="install" type="button" class="btn primary">Install on PS4</button>
     </div>
   </div>
 </div>
 
 <script>
-const DATA_URL = 'https://raw.githubusercontent.com/Plutana-eng-hash/123123/refs/heads/main/da.json';
-const TIMEOUT_MS = 12000;
-const ORDER = ['name','version','title_id','id','region','release','size','min_fw','downloadUrl'];
-const HIDE = ['icon','description','cover_url'];
-const LABELS = {id:'ID',title_id:'Title ID',min_fw:'Min firmware',release:'Release date',downloadUrl:'File'};
-const state = {apps:[],query:'',selected:null,lastFocus:null};
-const $ = id => document.getElementById(id);
+/* Where the app list comes from. If the first one fails, the page tries da.json next to this file. */
+var DATA_URLS = ['https://dn721605.ca.archive.org/0/items/ps4-fpkg-collection-english-fpkgi/GAMES.json', 'da.json'];
+var TIMEOUT_MS = 12000;
+var ORDER = ['name','version','title_id','id','region','release','size','min_fw','downloadUrl'];
+var HIDE = ['icon','description','cover_url'];
+var LABELS = {id:'ID',title_id:'Title ID',min_fw:'Min firmware',release:'Release date',downloadUrl:'File'};
+var state = {apps:[],query:'',selected:null,lastFocus:null,busy:false};
+function $(id){return document.getElementById(id)}
 
-function el(tag, cls, text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n}
-const has = v => v!==undefined && v!==null && String(v).trim()!=='';
-const fmtVer = v => !v ? 'Unversioned' : (/^\d/.test(v) ? 'v'+v : v);
+function el(tag, cls, text){var n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n}
+function fill(node, children){while(node.firstChild)node.removeChild(node.firstChild);for(var i=0;i<children.length;i++)node.appendChild(children[i])}
+function has(v){return v!==undefined&&v!==null&&String(v).trim()!==''}
+function fmtVer(v){return !v?'Unversioned':(/^\d/.test(v)?'v'+v:v)}
 function fmtBytes(v){
-  let b=Number(v); if(!Number.isFinite(b)||b<=0) return '';
-  const u=['B','KB','MB','GB','TB']; let i=0;
+  var b=Number(v);if(!isFinite(b)||b<=0)return '';
+  var u=['B','KB','MB','GB','TB'],i=0;
   while(b>=1024&&i<u.length-1){b/=1024;i++}
   return (i===0?String(b):b.toFixed(b>=100?0:1))+' '+u[i];
 }
 function humanize(k){
-  if(LABELS[k]) return LABELS[k];
-  const s=k.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ').trim();
+  if(LABELS[k])return LABELS[k];
+  var s=k.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ').trim();
   return s.charAt(0).toUpperCase()+s.slice(1);
 }
 function fileName(url){
-  try{const n=decodeURIComponent(new URL(url).pathname.split('/').pop()||'');return n||url}catch(e){return url}
+  try{var n=decodeURIComponent(String(url).split('?')[0].split('/').pop()||'');return n||url}catch(e){return url}
 }
 function fmtVal(k,v){
-  if(k==='size') return fmtBytes(v)||'Not provided';
-  if(k==='downloadUrl') return v?fileName(v):'Not provided';
-  if(!has(v)) return 'Not provided';
-  if(Array.isArray(v)) return v.join(', ');
-  if(typeof v==='object') return JSON.stringify(v);
+  if(k==='size')return fmtBytes(v)||'Not provided';
+  if(k==='downloadUrl')return v?fileName(v):'Not provided';
+  if(!has(v))return 'Not provided';
+  if(Array.isArray(v))return v.join(', ');
+  if(typeof v==='object')return JSON.stringify(v);
   return String(v);
 }
 function buildDesc(i){
-  const p=[];
-  if(has(i.region)) p.push('Region '+i.region+'.');
-  if(has(i.release)) p.push('Released '+i.release+'.');
-  const s=fmtBytes(i.size); if(s) p.push('Download size '+s+'.');
-  if(has(i.min_fw)) p.push('Requires firmware '+i.min_fw+' or later.');
+  var p=[];
+  if(has(i.region))p.push('Region '+i.region+'.');
+  if(has(i.release))p.push('Released '+i.release+'.');
+  var s=fmtBytes(i.size);if(s)p.push('Download size '+s+'.');
+  if(has(i.min_fw))p.push('Requires firmware '+i.min_fw+' or later.');
   return p.join(' ');
 }
 function extract(data){
-  if(Array.isArray(data)) return data;
-  if(!data||typeof data!=='object') throw new Error('The data was not in a format this page understands.');
-  const src = data.DATA!==undefined?data.DATA : data.data!==undefined?data.data : data;
-  if(Array.isArray(src)) return src;
-  if(!src||typeof src!=='object') throw new Error('The data was not in a format this page understands.');
-  return Object.entries(src).filter(([,v])=>v&&typeof v==='object'&&!Array.isArray(v))
-    .map(([k,v])=>/^https?:\/\//i.test(k)?{downloadUrl:k,...v}:{id:k,...v});
+  if(Array.isArray(data))return data;
+  if(!data||typeof data!=='object')throw new Error('The data was not in a format this page understands.');
+  var src=data.DATA!==undefined?data.DATA:data.data!==undefined?data.data:data;
+  if(Array.isArray(src))return src;
+  if(!src||typeof src!=='object')throw new Error('The data was not in a format this page understands.');
+  return Object.keys(src).filter(function(k){var v=src[k];return v&&typeof v==='object'&&!Array.isArray(v)})
+    .map(function(k){var o={},v=src[k],key;
+      if(/^https?:\/\//i.test(k))o.downloadUrl=k;else o.id=k;
+      for(key in v)o[key]=v[key];return o});
 }
 function normalize(i,idx){
-  const id = has(i.id)?i.id : has(i.title_id)?i.title_id : idx+1;
-  return {...i,
-    id:String(id),
-    name:has(i.name)?String(i.name):has(i.title)?String(i.title):'Untitled app',
-    version:has(i.version)?String(i.version):'',
-    icon:has(i.icon)?String(i.icon):has(i.cover_url)?String(i.cover_url):'',
-    description:has(i.description)?String(i.description):buildDesc(i),
-    downloadUrl:has(i.downloadUrl)?String(i.downloadUrl):''};
+  var o={},k;for(k in i)o[k]=i[k];
+  var id=has(i.id)?i.id:has(i.title_id)?i.title_id:idx+1;
+  o.id=String(id);
+  o.name=has(i.name)?String(i.name):has(i.title)?String(i.title):'Untitled app';
+  o.version=has(i.version)?String(i.version):'';
+  o.icon=has(i.icon)?String(i.icon):has(i.cover_url)?String(i.cover_url):'';
+  o.description=has(i.description)?String(i.description):buildDesc(i);
+  o.downloadUrl=has(i.downloadUrl)?String(i.downloadUrl):(has(i.download_url)?String(i.download_url):(has(i.url)?String(i.url):''));
+  return o;
 }
-function setView(v){['loading','grid','empty','error'].forEach(n=>$(n).classList.toggle('hidden',n!==v))}
+function setView(v){['loading','grid','empty','error'].forEach(function(n){$(n).classList.toggle('hidden',n!==v)})}
 
 function skeletons(){
-  const out=[];
-  for(let i=0;i<8;i++){
-    const c=el('div','skc');
-    [['3.25rem','60%'],['.8rem','100%'],['.8rem','80%']].forEach(([h,w])=>{
-      const s=el('div','sk');s.style.cssText='height:'+h+';width:'+w;c.appendChild(s)});
+  var out=[];
+  for(var i=0;i<8;i++){
+    var c=el('div','skc');
+    [['3.25rem','60%'],['.8rem','100%'],['.8rem','80%']].forEach(function(d){
+      var s=el('div','sk');s.style.height=d[0];s.style.width=d[1];c.appendChild(s)});
     out.push(c);
   }
-  $('loading').replaceChildren(...out);
+  fill($('loading'),out);
 }
 function icon(app,size){
-  const box=el('div','icon '+size);
-  const fb=()=>box.replaceChildren(el('span','initial',(app.name.trim().charAt(0)||'?').toUpperCase()));
+  var box=el('div','icon '+size);
+  function fb(){fill(box,[el('span','initial',(app.name.trim().charAt(0)||'?').toUpperCase())])}
   if(!app.icon){fb();return box}
-  const img=document.createElement('img');
-  img.src=app.icon;img.alt='';img.loading='lazy';img.referrerPolicy='no-referrer';
-  img.addEventListener('error',fb);
+  var img=document.createElement('img');
+  img.alt='';img.setAttribute('loading','lazy');
+  img.onerror=fb;
+  img.src=app.icon;
   box.appendChild(img);
   return box;
 }
 function card(app){
-  const b=el('button','card'); b.type='button';
-  const top=el('div','top'); top.appendChild(icon(app,'md'));
-  const n=el('div','names');
+  var b=el('button','card');b.type='button';
+  var top=el('div','top');top.appendChild(icon(app,'md'));
+  var n=el('div','names');
   n.appendChild(el('h3','name',app.name));
   n.appendChild(el('span','ver muted',fmtVer(app.version)));
-  top.appendChild(n); b.appendChild(top);
+  top.appendChild(n);b.appendChild(top);
   b.appendChild(el('p','desc muted',app.description||'No description provided.'));
-  b.appendChild(el('span','cta','View & download'));
-  b.addEventListener('click',()=>openModal(app,b));
+  b.appendChild(el('span','cta','View & install'));
+  b.addEventListener('click',function(){openModal(app,b)});
   return b;
 }
 function render(){
-  const q=state.query.trim().toLowerCase();
+  var q=state.query.trim().toLowerCase();
   if(!state.apps.length){
     $('empty-t').textContent='The app list is empty';
     $('empty-s').textContent='The data loaded, but it has no items yet.';
-    $('count').textContent='0 apps'; setView('empty'); return;
+    $('count').textContent='0 apps';setView('empty');return;
   }
-  const list=state.apps.filter(a=>!q||[a.name,a.description,a.id].some(v=>String(v).toLowerCase().includes(q)));
+  var list=state.apps.filter(function(a){
+    return !q||[a.name,a.description,a.id].some(function(v){return String(v).toLowerCase().indexOf(q)!==-1})});
   $('count').textContent=q?list.length+' of '+state.apps.length+' apps':state.apps.length+(state.apps.length===1?' app':' apps');
   if(!list.length){
     $('empty-t').textContent='No apps match "'+state.query.trim()+'"';
     $('empty-s').textContent='Try a different search term.';
-    setView('empty'); return;
+    setView('empty');return;
   }
-  $('grid').replaceChildren(...list.map(card));
+  fill($('grid'),list.map(card));
   setView('grid');
 }
 function describeError(e){
-  if(e&&e.name==='AbortError') return 'The request timed out. Check your connection and try again.';
-  if(e instanceof SyntaxError) return 'The server responded, but the data was not valid JSON.';
-  if(e instanceof TypeError) return 'The network request failed. Check your connection and try again.';
+  if(e&&e.name==='AbortError')return 'The request timed out. Check your connection and try again.';
+  if(e instanceof SyntaxError)return 'The server responded, but the data was not valid JSON.';
+  if(e instanceof TypeError)return 'The network request failed. Check your connection and try again.';
   return (e&&e.message)||'Something went wrong while loading the data.';
 }
-async function load(){
-  setView('loading'); $('count').textContent='Loading apps';
-  const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),TIMEOUT_MS);
-  try{
-    const r=await fetch(DATA_URL,{signal:ctl.signal,cache:'no-store'});
-    if(!r.ok) throw new Error('The server responded with status '+r.status+'.');
-    state.apps=extract(await r.json()).filter(i=>i&&typeof i==='object').map(normalize);
-    render();
-  }catch(e){
-    $('error-msg').textContent=describeError(e);
-    $('count').textContent='Unavailable'; setView('error');
-  }finally{clearTimeout(t)}
+function fetchJson(url){
+  var ctl=typeof AbortController!=='undefined'?new AbortController():null;
+  var t=setTimeout(function(){if(ctl)ctl.abort()},TIMEOUT_MS);
+  return fetch(url,ctl?{signal:ctl.signal,cache:'no-store'}:{cache:'no-store'}).then(function(r){
+    clearTimeout(t);
+    if(!r.ok)throw new Error('The server responded with status '+r.status+'.');
+    return r.json();
+  },function(e){clearTimeout(t);throw e});
+}
+function load(){
+  setView('loading');$('count').textContent='Loading apps';
+  var lastErr=null,i=0;
+  function next(){
+    if(i>=DATA_URLS.length){
+      $('error-msg').textContent=describeError(lastErr);
+      $('count').textContent='Unavailable';setView('error');return;
+    }
+    fetchJson(DATA_URLS[i++]).then(function(data){
+      state.apps=extract(data).filter(function(x){return x&&typeof x==='object'}).map(normalize);
+      render();
+    }).catch(function(e){lastErr=e;next()});
+  }
+  next();
 }
 
 function renderMeta(app){
-  const hidden=HIDE.concat(has(app.title_id)?['id']:[]);
-  const keys=ORDER.filter(k=>k in app&&!hidden.includes(k))
-    .concat(Object.keys(app).filter(k=>!ORDER.includes(k)&&!hidden.includes(k)));
-  $('mmeta').replaceChildren(...keys.map(k=>{
-    const r=el('div','row');
+  var hidden=HIDE.concat(has(app.title_id)?['id']:[]);
+  var keys=ORDER.filter(function(k){return k in app&&hidden.indexOf(k)===-1})
+    .concat(Object.keys(app).filter(function(k){return ORDER.indexOf(k)===-1&&hidden.indexOf(k)===-1&&k!=='download_url'&&k!=='url'}));
+  fill($('mmeta'),keys.map(function(k){
+    var r=el('div','row');
     r.appendChild(el('dt','',humanize(k)));
     r.appendChild(el('dd','',fmtVal(k,app[k])));
     return r;
   }));
 }
+function setDisabled(id,flag){$(id).setAttribute('aria-disabled',flag?'true':'false')}
 function openModal(app,trigger){
-  state.selected=app; state.lastFocus=trigger||null;
-  const t=el('div'); t.style.minWidth='0';
+  state.selected=app;state.lastFocus=trigger||null;state.busy=false;
+  try{
+    var ip=localStorage.getItem('ps4ip'),pt=localStorage.getItem('ps4port');
+    if(ip)$('ps4ip').value=ip;if(pt)$('ps4port').value=pt;
+  }catch(e){}
+  var t=el('div');t.style.minWidth='0';
   t.appendChild(el('h3','pname',app.name));
   t.appendChild(el('p','ver muted',app.version?'Version '+app.version:'Version not specified'));
-  $('mhead').replaceChildren(icon(app,'lg'),t);
+  fill($('mhead'),[icon(app,'lg'),t]);
   $('mdesc').textContent=app.description||'No description provided.';
   renderMeta(app);
   $('status').textContent='';
-  const dl=$('dl');
+  var dl=$('dl');
   if(app.downloadUrl){
-    dl.href=app.downloadUrl; dl.setAttribute('aria-disabled','false');
-    dl.setAttribute('download',fileName(app.downloadUrl));
-    $('copy').setAttribute('aria-disabled','false');
+    dl.href=app.downloadUrl;dl.setAttribute('download',fileName(app.downloadUrl));
+    setDisabled('dl',false);setDisabled('copy',false);setDisabled('install',false);
   }else{
-    dl.removeAttribute('href'); dl.setAttribute('aria-disabled','true');
-    $('copy').setAttribute('aria-disabled','true');
+    dl.removeAttribute('href');
+    setDisabled('dl',true);setDisabled('copy',true);setDisabled('install',true);
     $('status').textContent='No download link is listed for this app.';
   }
-  $('modal').classList.add('open'); document.body.classList.add('locked');
+  $('modal').classList.add('open');document.body.classList.add('locked');
   $('close').focus();
 }
 function closeModal(){
-  $('modal').classList.remove('open'); document.body.classList.remove('locked');
+  $('modal').classList.remove('open');document.body.classList.remove('locked');
   state.selected=null;
-  if(state.lastFocus&&document.contains(state.lastFocus)) state.lastFocus.focus();
+  if(state.lastFocus&&document.contains(state.lastFocus))state.lastFocus.focus();
   state.lastFocus=null;
 }
-async function copyLink(){
-  const a=state.selected; if(!a||!a.downloadUrl) return;
-  try{await navigator.clipboard.writeText(a.downloadUrl);$('status').textContent='Link copied.'}
-  catch(e){window.prompt('Copy this link:',a.downloadUrl)}
+function installOnPS4(){
+  var a=state.selected;
+  if(!a||!a.downloadUrl||state.busy)return;
+  var host=($('ps4ip').value||'127.0.0.1').trim().replace(/^https?:\/\//i,'').replace(/[\/:].*$/,'');
+  var port=($('ps4port').value||'12800').trim();
+  if(!/^\d{2,5}$/.test(port)){$('status').textContent='Enter a valid port number.';return}
+  try{localStorage.setItem('ps4ip',host);localStorage.setItem('ps4port',port)}catch(e){}
+  state.busy=true;setDisabled('install',true);
+  $('status').textContent='Sending to the PS4 installer...';
+  /* The installer expects: POST /api/install {"type":"direct","packages":[url]}.
+     no-cors + text/plain avoids a browser preflight the installer cannot answer, so the reply is unreadable. */
+  fetch('http://'+host+':'+port+'/api/install',{
+    method:'POST',mode:'no-cors',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({type:'direct',packages:[a.downloadUrl]})
+  }).then(function(){
+    $('status').textContent='Sent. Check the PS4 for a download notification.';
+  },function(){
+    $('status').textContent='Could not reach '+host+':'+port+'. Start the Remote Package Installer on the PS4. If this page is on https, open it over http instead.';
+  }).then(function(){state.busy=false;setDisabled('install',false)});
+}
+function copyLink(){
+  var a=state.selected;if(!a||!a.downloadUrl)return;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(a.downloadUrl).then(function(){$('status').textContent='Link copied.'},
+      function(){window.prompt('Copy this link:',a.downloadUrl)});
+  }else{window.prompt('Copy this link:',a.downloadUrl)}
 }
 
-$('dl').addEventListener('click',()=>{ if(state.selected&&state.selected.downloadUrl) $('status').textContent='Download started. Large files can take a while.'});
+$('dl').addEventListener('click',function(){
+  if(state.selected&&state.selected.downloadUrl)$('status').textContent='Download started. Large files can take a while.';
+});
 $('copy').addEventListener('click',copyLink);
+$('install').addEventListener('click',installOnPS4);
 $('close').addEventListener('click',closeModal);
 $('retry').addEventListener('click',load);
-$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});
-$('search').addEventListener('input',e=>{state.query=e.target.value;if(state.apps.length)render()});
-document.addEventListener('keydown',e=>{
-  if(!$('modal').classList.contains('open')) return;
-  if(e.key==='Escape'){closeModal();return}
-  if(e.key!=='Tab') return;
-  const f=Array.from($('panel').querySelectorAll('button,a[href]')).filter(n=>n.getAttribute('aria-disabled')!=='true');
-  if(!f.length) return;
-  const first=f[0], last=f[f.length-1];
+$('modal').addEventListener('click',function(e){if(e.target===$('modal'))closeModal()});
+$('search').addEventListener('input',function(e){state.query=e.target.value;if(state.apps.length)render()});
+document.addEventListener('keydown',function(e){
+  if(!$('modal').classList.contains('open'))return;
+  if(e.key==='Escape'||e.keyCode===27){closeModal();return}
+  if(e.key!=='Tab'&&e.keyCode!==9)return;
+  var f=Array.prototype.slice.call($('panel').querySelectorAll('button,a[href],input')).filter(function(n){return n.getAttribute('aria-disabled')!=='true'});
+  if(!f.length)return;
+  var first=f[0],last=f[f.length-1];
   if(!$('panel').contains(document.activeElement)){e.preventDefault();first.focus()}
   else if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
   else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
