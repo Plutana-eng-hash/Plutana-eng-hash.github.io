@@ -80,6 +80,7 @@ button:focus,input:focus,a:focus{outline:3px solid var(--ink);outline-offset:2px
 .ip input{padding:.6rem .75rem;background:var(--bg);border:2px solid var(--ink);border-radius:0}
 .ip #ps4ip{flex:1;min-width:0;margin-right:.5rem}
 .ip #ps4port{width:5.5rem}
+.ip .small{margin-top:.6rem;padding:.5rem 1rem;font-size:.8rem}
 .ip p{margin-top:.3rem;color:var(--muted);font-size:.8rem}
 .status{min-height:1.25rem;margin-top:1rem;font-size:.875rem;color:var(--muted)}
 .foot{display:flex;flex-wrap:wrap;justify-content:flex-end;padding:.5rem 1.25rem 1rem;border-top:1px solid var(--ink)}
@@ -124,10 +125,11 @@ button:focus,input:focus,a:focus{outline:3px solid var(--ink);outline-offset:2px
       <div class="ip">
         <label for="ps4ip">PS4 address and installer port</label>
         <div class="fields">
-          <input id="ps4ip" type="text" value="127.0.0.1" autocomplete="off" autocapitalize="off">
+          <input id="ps4ip" type="text" placeholder="PS4 IP, e.g. 192.168.1.50" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
           <input id="ps4port" type="text" value="12800" inputmode="numeric" autocomplete="off" aria-label="Installer port">
         </div>
-        <p>Use 127.0.0.1 when this page is open in the PS4 browser. Otherwise enter the PS4's IP address. Start the Remote Package Installer on the PS4 first.</p>
+        <button id="test" type="button" class="btn small">Test connection</button>
+        <p>Find the IP on the PS4 under Settings, Network, View Connection Status. If this page is open in the PS4's own browser, it fills in 127.0.0.1 for you. Start the Remote Package Installer on the PS4 first.</p>
       </div>
       <p id="status" class="status" aria-live="polite"></p>
     </div>
@@ -305,8 +307,9 @@ function openModal(app,trigger){
   state.selected=app;state.lastFocus=trigger||null;state.busy=false;
   try{
     var ip=localStorage.getItem('ps4ip'),pt=localStorage.getItem('ps4port');
-    if(ip)$('ps4ip').value=ip;if(pt)$('ps4port').value=pt;
+    if(ip&&(IS_PS4||ip!=='127.0.0.1'))$('ps4ip').value=ip;if(pt)$('ps4port').value=pt;
   }catch(e){}
+  if(IS_PS4&&!$('ps4ip').value)$('ps4ip').value='127.0.0.1';
   var t=el('div');t.style.minWidth='0';
   t.appendChild(el('h3','pname',app.name));
   t.appendChild(el('p','ver muted',app.version?'Version '+app.version:'Version not specified'));
@@ -332,25 +335,63 @@ function closeModal(){
   if(state.lastFocus&&document.contains(state.lastFocus))state.lastFocus.focus();
   state.lastFocus=null;
 }
+var IS_PS4 = /PlayStation/i.test(navigator.userAgent||'');
+function parseTarget(){
+  var raw=($('ps4ip').value||'').trim().replace(/^[a-z]+:\/\//i,'').replace(/\/.*$/,'');
+  var port=($('ps4port').value||'12800').trim();
+  var m=raw.match(/^(.+):(\d{2,5})$/);
+  if(m){raw=m[1];port=m[2]}
+  if(!raw&&IS_PS4)raw='127.0.0.1';
+  if(!raw)return {error:'Enter your PS4 IP address first (Settings, Network, View Connection Status).'};
+  var ipv4=/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(raw);
+  if(ipv4){
+    for(var i=1;i<=4;i++){if(Number(ipv4[i])>255)return {error:raw+' is not a valid IP address.'}}
+  }else if(!/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/i.test(raw)){
+    return {error:raw+' is not a valid address.'};
+  }
+  if(!/^\d{2,5}$/.test(port)||Number(port)>65535)return {error:'Enter a valid port number (the default is 12800).'};
+  if(raw==='127.0.0.1'&&!IS_PS4)return {error:'127.0.0.1 only works inside the PS4 browser. On a PC or phone, enter the PS4\'s real IP address.'};
+  return {host:raw,port:port};
+}
+function reach(host,port,opts){
+  var ctl=typeof AbortController!=='undefined'?new AbortController():null;
+  var t=setTimeout(function(){if(ctl)ctl.abort()},8000);
+  opts.mode='no-cors';if(ctl)opts.signal=ctl.signal;
+  return fetch('http://'+host+':'+port+(opts.path||'/'),opts).then(function(r){clearTimeout(t);return r},function(e){clearTimeout(t);throw e});
+}
+function failText(host,port){
+  var msg='Could not reach '+host+':'+port+'. Check that the PS4 is on, the Remote Package Installer is running, and this device is on the same network.';
+  if(location.protocol==='https:')msg+=' This page is on https, which blocks requests to the PS4. Open it over http or from a local file.';
+  return msg;
+}
+function testConnection(){
+  var t=parseTarget();
+  if(t.error){$('status').textContent=t.error;return}
+  try{localStorage.setItem('ps4ip',t.host);localStorage.setItem('ps4port',t.port)}catch(e){}
+  $('status').textContent='Testing '+t.host+':'+t.port+'...';
+  reach(t.host,t.port,{method:'GET'}).then(function(){
+    $('status').textContent='The PS4 installer answered at '+t.host+':'+t.port+'. You can install now.';
+  },function(){$('status').textContent=failText(t.host,t.port)});
+}
 function installOnPS4(){
   var a=state.selected;
   if(!a||!a.downloadUrl||state.busy)return;
-  var host=($('ps4ip').value||'127.0.0.1').trim().replace(/^https?:\/\//i,'').replace(/[\/:].*$/,'');
-  var port=($('ps4port').value||'12800').trim();
-  if(!/^\d{2,5}$/.test(port)){$('status').textContent='Enter a valid port number.';return}
+  var t=parseTarget();
+  if(t.error){$('status').textContent=t.error;return}
+  var host=t.host,port=t.port;
   try{localStorage.setItem('ps4ip',host);localStorage.setItem('ps4port',port)}catch(e){}
   state.busy=true;setDisabled('install',true);
   $('status').textContent='Sending to the PS4 installer...';
   /* The installer expects: POST /api/install {"type":"direct","packages":[url]}.
      no-cors + text/plain avoids a browser preflight the installer cannot answer, so the reply is unreadable. */
-  fetch('http://'+host+':'+port+'/api/install',{
-    method:'POST',mode:'no-cors',
+  reach(host,port,{
+    path:'/api/install',method:'POST',
     headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({type:'direct',packages:[a.downloadUrl]})
   }).then(function(){
     $('status').textContent='Sent. Check the PS4 for a download notification.';
   },function(){
-    $('status').textContent='Could not reach '+host+':'+port+'. Start the Remote Package Installer on the PS4. If this page is on https, open it over http instead.';
+    $('status').textContent=failText(host,port);
   }).then(function(){state.busy=false;setDisabled('install',false)});
 }
 function copyLink(){
@@ -366,6 +407,7 @@ $('dl').addEventListener('click',function(){
 });
 $('copy').addEventListener('click',copyLink);
 $('install').addEventListener('click',installOnPS4);
+$('test').addEventListener('click',testConnection);
 $('close').addEventListener('click',closeModal);
 $('retry').addEventListener('click',load);
 $('modal').addEventListener('click',function(e){if(e.target===$('modal'))closeModal()});
