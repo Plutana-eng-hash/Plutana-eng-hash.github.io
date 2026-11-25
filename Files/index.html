@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PS4 Games List</title>
+<style>
+  :root { --bg:#fff; --fg:#1b1b1f; --card:#f3f4f7; --muted:#666; --accent:#2563eb; --line:#d9dce3; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14151a; --fg:#eceef3; --card:#1f2128; --muted:#9aa0ad; --accent:#6ea0ff; --line:#2e3038; }
+  }
+  * { box-sizing:border-box; }
+  body { font-family:system-ui,sans-serif; background:var(--bg); color:var(--fg); margin:0; padding:20px; max-width:1100px; margin-inline:auto; }
+  h1 { margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 16px; font-size:.9rem; }
+  .bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+  input[type=search], select { padding:10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); font:inherit; }
+  input[type=search] { flex:1; min-width:220px; }
+  button { padding:10px 14px; border:0; border-radius:8px; background:var(--accent); color:#fff; cursor:pointer; font:inherit; }
+  button.alt { background:var(--card); color:var(--fg); border:1px solid var(--line); }
+  button:disabled { opacity:.5; cursor:default; }
+  label { font-size:.9rem; color:var(--muted); display:flex; gap:6px; align-items:center; }
+  #status { color:var(--muted); margin:10px 0; min-height:1.3em; }
+  #status.err { color:#d33; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+  th { position:sticky; top:0; background:var(--bg); cursor:pointer; user-select:none; }
+  td.id { font-family:ui-monospace,monospace; white-space:nowrap; }
+  a.btn { display:inline-block; padding:6px 12px; border-radius:8px; background:var(--accent); color:#fff; font-size:.85rem; white-space:nowrap; }
+  a.btn:hover { text-decoration:none; opacity:.9; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .wrap { overflow-x:auto; }
+  #more { display:block; margin:16px auto; }
+</style>
+</head>
+<body>
+<h1>PS4 Games List</h1>
+<p class="sub">Title ID, game name and latest patch version for PS4 titles. Data source: the
+  <a href="https://huggingface.co/datasets/Ailyth/Playstation4GamePatchData" target="_blank" rel="noopener">Playstation4GamePatchData</a>
+  dataset (last updated February 2024). Direct downloads need the helper running (see README). Without it, each game links to its ORBISPatches page.</p>
+
+<div class="bar">
+  <input id="q" type="search" placeholder="Search by name or CUSA ID…" aria-label="Search">
+  <select id="sort" aria-label="Sort">
+    <option value="id">Sort: Title ID</option>
+    <option value="title">Sort: Name</option>
+    <option value="version">Sort: Version (high first)</option>
+  </select>
+  <label><input id="dedupe" type="checkbox"> Hide duplicate names</label>
+  <button id="reload" class="alt">Reload</button>
+  <button id="dl">Download JSON</button>
+</div>
+<div id="status"></div>
+<div class="wrap">
+  <table>
+    <thead><tr><th>Title ID</th><th>Name</th><th>Latest version</th><th>Download</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+<button id="more" class="alt" hidden>Show more</button>
+
+<script>
+// Several mirrors of the same file; the first that works is used.
+const SOURCES = [
+  'https://huggingface.co/datasets/Ailyth/Playstation4GamePatchData/resolve/main/extracted_info.txt',
+  'https://huggingface.co/datasets/Ailyth/Playstation4GamePatchData/raw/main/extracted_info.txt'
+];
+const CACHE_KEY = 'ps4games-v1';
+const PAGE = 200;
+
+let games = [];   // [{id, title, version}]
+let view = [];    // filtered + sorted
+let shown = 0;
+
+const $ = id => document.getElementById(id);
+const setStatus = (t, err) => { $('status').textContent = t; $('status').className = err ? 'err' : ''; };
+
+// Line format: CUSA12345,Some Title (may contain commas),01.23
+// So: first comma ends the ID, last comma starts the version.
+function parse(text) {
+  const out = [];
+  for (const line of text.split(/\r?\n/)) {
+    const a = line.indexOf(','), b = line.lastIndexOf(',');
+    if (a < 1 || b <= a) continue;
+    const id = line.slice(0, a).trim();
+    if (!/^CUSA\d{5}$/i.test(id)) continue;
+    out.push({ id: id.toUpperCase(), title: line.slice(a + 1, b).trim(), version: line.slice(b + 1).trim() });
+  }
+  return out;
+}
+
+async function fetchWithRetry(url, tries = 3) {
+  let lastErr;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 20000);
+      const res = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(t);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.text();
+    } catch (e) {
+      lastErr = e;
+      await new Promise(r => setTimeout(r, 600 * (i + 1)));
+    }
+  }
+  throw lastErr;
+}
+
+async function load(force) {
+  setStatus('Loading…');
+  $('reload').disabled = true;
+  try {
+    if (!force) {
+      try {
+        const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+        if (c && Date.now() - c.t < 24 * 3600 * 1000) { games = c.games; refresh(); setStatus(statusText() + ' (cached)'); return; }
+      } catch (_) {}
+    }
+    let text, lastErr;
+    for (const u of SOURCES) {
+      try { text = await fetchWithRetry(u); break; } catch (e) { lastErr = e; }
+    }
+    if (!text) throw lastErr || new Error('all sources failed');
+    games = parse(text);
+    if (!games.length) throw new Error('file loaded but no rows could be parsed');
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), games })); } catch (_) {}
+    refresh();
+  } catch (e) {
+    setStatus('Failed to load: ' + e.message + '. Check your connection and try Reload.', true);
+  } finally {
+    $('reload').disabled = false;
+  }
+}
+
+const statusText = () => `${view.length.toLocaleString()} of ${games.length.toLocaleString()} entries`;
+
+function refresh() {
+  const q = $('q').value.trim().toLowerCase();
+  let list = q ? games.filter(g => g.id.toLowerCase().includes(q) || g.title.toLowerCase().includes(q)) : games.slice();
+  if ($('dedupe').checked) {
+    const seen = new Set();
+    list = list.filter(g => { const k = g.title.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+  }
+  const s = $('sort').value;
+  if (s === 'title') list.sort((a, b) => a.title.localeCompare(b.title));
+  else if (s === 'version') list.sort((a, b) => parseFloat(b.version) - parseFloat(a.version));
+  else list.sort((a, b) => a.id.localeCompare(b.id));
+  view = list; shown = 0;
+  $('rows').innerHTML = '';
+  more();
+  setStatus(statusText());
+}
+
+function more() {
+  const frag = document.createDocumentFragment();
+  view.slice(shown, shown + PAGE).forEach(g => {
+    const tr = document.createElement('tr');
+    const td1 = document.createElement('td'); td1.className = 'id';
+    const a = document.createElement('a');
+    a.href = 'https://orbispatches.com/' + g.id; a.target = '_blank'; a.rel = 'noopener'; a.textContent = g.id;
+    td1.appendChild(a);
+    const td2 = document.createElement('td'); td2.textContent = g.title;
+    const td3 = document.createElement('td'); td3.textContent = g.version;
+    const td4 = document.createElement('td');
+    const d = document.createElement('button');
+    d.textContent = 'Download';
+    d.addEventListener('click', () => openPicker(g, td4));
+    td4.appendChild(d);
+    tr.append(td1, td2, td3, td4); frag.appendChild(tr);
+  });
+  $('rows').appendChild(frag);
+  shown = Math.min(shown + PAGE, view.length);
+  $('more').hidden = shown >= view.length;
+}
+
+// Where the helper runs. Default is your own computer; override with ?helper=https://your-server in the URL.
+const HELPER = (new URLSearchParams(location.search).get('helper') || 'http://127.0.0.1:8787').replace(/\/$/, '');
+
+async function helperJson(path) {
+  let res;
+  try { res = await fetch(HELPER + path); }
+  catch (_) { throw new Error('Helper not running. Start it with: python3 ps4_helper.py'); }
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || 'HTTP ' + res.status);
+  return data;
+}
+
+async function openPicker(g, cell) {
+  cell.textContent = 'Loading versions…';
+  try {
+    const versions = await helperJson('/versions?id=' + g.id);
+    if (!versions.length) throw new Error('No patches found for ' + g.id);
+    cell.textContent = '';
+    const sel = document.createElement('select');
+    versions.forEach((v, i) => {            // already newest first, so index 0 is selected by default
+      const o = document.createElement('option');
+      o.value = v.key; o.textContent = v.version + (i === 0 ? ' (newest)' : '');
+      sel.appendChild(o);
+    });
+    const go = document.createElement('button'); go.textContent = 'Get file';
+    go.addEventListener('click', () => startDownload(g, sel.value, go));
+    cell.append(sel, ' ', go);
+  } catch (e) {
+    cell.textContent = '';
+    const b = document.createElement('button'); b.textContent = 'Retry'; b.addEventListener('click', () => openPicker(g, cell));
+    const m = document.createElement('div'); m.className = 'sub'; m.textContent = e.message + ' ';
+    const f = document.createElement('a'); f.href = 'https://orbispatches.com/' + g.id; f.target = '_blank'; f.rel = 'noopener'; f.textContent = 'Open on ORBISPatches instead';
+    m.appendChild(f);
+    cell.append(b, m);
+  }
+}
+
+async function startDownload(g, key, btn) {
+  btn.disabled = true; btn.textContent = 'Starting…';
+  try {
+    const { urls } = await helperJson('/pieces?id=' + g.id + '&key=' + encodeURIComponent(key));
+    for (const u of urls) {                 // multi-part patches download one piece after another
+      const a = document.createElement('a');
+      a.href = HELPER + '/file?url=' + encodeURIComponent(u);
+      document.body.appendChild(a); a.click(); a.remove();
+      await new Promise(r => setTimeout(r, 1500));
+    }
+    btn.textContent = urls.length > 1 ? 'Started ' + urls.length + ' parts' : 'Started';
+  } catch (e) {
+    btn.textContent = 'Failed'; btn.title = e.message; setStatus(g.id + ': ' + e.message, true);
+  } finally { setTimeout(() => { btn.disabled = false; }, 2000); }
+}
+
+function download() {
+  const blob = new Blob([JSON.stringify(view, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'ps4-games.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+let timer;
+$('q').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(refresh, 200); });
+$('sort').addEventListener('change', refresh);
+$('dedupe').addEventListener('change', refresh);
+$('more').addEventListener('click', more);
+$('reload').addEventListener('click', () => load(true));
+$('dl').addEventListener('click', download);
+
+load(false);
+</script>
+</body>
+</html>
